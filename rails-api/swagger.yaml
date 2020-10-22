@@ -1,0 +1,80 @@
+openapi: 3.0.2
+info:
+  description: Sample Rails app
+  version: 1.0.0
+  title: Demo API
+servers:
+  - url: http://localhost:4000
+tags:
+  - name: user
+    description: Operations about user
+paths:
+  /signup:
+    post:
+      tags:
+        - user
+      summary: Register user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: object
+                  properties:
+                    email:
+                      description: email
+                      type: string
+                    password:
+                      description: password
+                      type: string
+                    password_confirmation:
+                      description: password_confirmation
+                      type: string
+      responses:
+        "201":
+          description: Successful operation
+          headers:
+            Authorization:
+              description: Authorization token
+              type: string
+        "422":
+          description: Invalid email or password
+  /login:
+    post:
+      tags:
+        - user
+      summary: Login user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: object
+                  properties:
+                    email:
+                      description: email
+                      type: string
+                    password:
+                      description: password
+                      type: string
+      responses:
+        "200":
+          description: Successful operation
+          headers:
+            Authorization:
+              description: Authorization token
+              type: string
+        "401":
+          description: Invalid email or password
+  /logout:
+    delete:
+      tags:
+        - user
+      summary: Logout user
+      responses:
+        "200":
+          description: Successful operation
