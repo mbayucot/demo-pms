@@ -8,6 +8,11 @@ servers:
 tags:
   - name: user
     description: Operations about user
+  - name: "v1/project"
+    description: Operations about a user's project
+  - name: "v1/task"
+    description: Operations about a user's task
+
 paths:
   /signup:
     post:
@@ -34,13 +39,13 @@ paths:
                       type: string
       responses:
         "201":
-          description: Successful operation
+          description: OK
           headers:
             Authorization:
               description: Authorization token
               type: string
         "422":
-          description: Invalid email or password
+          description: Unprocessable Entity
   /login:
     post:
       tags:
@@ -63,13 +68,13 @@ paths:
                       type: string
       responses:
         "200":
-          description: Successful operation
+          description: OK
           headers:
             Authorization:
               description: Authorization token
               type: string
         "401":
-          description: Invalid email or password
+          description: Unprocessable Entity
   /logout:
     delete:
       tags:
@@ -77,4 +82,245 @@ paths:
       summary: Logout user
       responses:
         "200":
-          description: Successful operation
+          description: OK
+
+  /projects:
+    get:
+      tags:
+        - "v1/project"
+      summary: Returns a list of projects
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    type: array
+                    items:
+                      type: object
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - "v1/project"
+      summary: Creates a new project
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Unprocessable Entity
+      security:
+        - bearerAuth: []
+  /projects/{projectId}:
+    get:
+      tags:
+        - "v1/project"
+      summary: Finds a project by ID
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+        "404":
+          description: Not Found
+      security:
+        - bearerAuth: []
+    put:
+      tags:
+        - "v1/project"
+      summary: Updates a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Unprocessable Entity
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - "v1/project"
+      summary: Deletes a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          type: integer
+      responses:
+        "204":
+          description: No Content
+      security:
+        - bearerAuth: []
+
+  /projects/{projectId}/tasks/:
+    get:
+      tags:
+        - "v1/task"
+      summary: Returns a list of tasks
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    type: array
+                    items:
+                      type: object
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - "v1/task"
+      summary: Creates a new task
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                summary:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Unprocessable Entity
+      security:
+        - bearerAuth: []
+  /tasks/{taskId}:
+    get:
+      tags:
+        - "v1/task"
+      summary: Finds a task by ID
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  summary:
+                    type: string
+                  description:
+                    type: string
+        "404":
+          description: Not Found
+      security:
+        - bearerAuth: []
+    put:
+      tags:
+        - "v1/task"
+      summary: Updates a task
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                summary:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Unprocessable Entity
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - "v1/task"
+      summary: Deletes a task
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          type: integer
+      responses:
+        "204":
+          description: No Content
+      security:
+        - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      description: authorization token
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: []

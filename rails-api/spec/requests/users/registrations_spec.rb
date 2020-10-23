@@ -2,6 +2,7 @@ require 'rails_helper'
 
 RSpec.describe 'Users::Registrations', type: :request do
   let(:user) { build(:user) }
+
   let(:valid_attributes) do
     user.slice(:email, :password, :password_confirmation)
   end
@@ -16,7 +17,7 @@ RSpec.describe 'Users::Registrations', type: :request do
         end.to change(User, :count).by(1)
       end
 
-      it 'returns 201 with the authorization token', :aggregate_failures do
+      it 'returns 201 with an authorization token', :aggregate_failures do
         post user_registration_url,
              params: { user: valid_attributes }, as: :json
         expect(response).to have_http_status(:created)
@@ -32,13 +33,11 @@ RSpec.describe 'Users::Registrations', type: :request do
         end.to change(User, :count).by(0)
       end
 
-      it 'returns 422 with the error message', :aggregate_failures do
+      it 'returns 422 with an error message', :aggregate_failures do
         post user_registration_url,
              params: { user: invalid_attributes }, as: :json
         expect(response).to have_http_status(:unprocessable_entity)
-        expect(json['errors']).to match(
-          { 'password' => ["can't be blank", "can't be blank"] }
-        )
+        expect(json['errors']).to match('password' => ["can't be blank"])
       end
     end
   end

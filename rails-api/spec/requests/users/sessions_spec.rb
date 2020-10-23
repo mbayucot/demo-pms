@@ -2,6 +2,7 @@ require 'rails_helper'
 
 RSpec.describe 'Users::Sessions', type: :request do
   let!(:user) { create(:user) }
+
   let(:valid_attributes) { user.slice(:email, :password) }
   let(:invalid_attributes) do
     { email: Faker::Internet.email, password: Faker::Internet.password }

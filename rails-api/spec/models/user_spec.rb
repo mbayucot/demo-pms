@@ -2,7 +2,23 @@ require 'rails_helper'
 
 RSpec.describe User, type: :model do
   it do
-    should define_enum_for(:role).with_values(user: 0, staff: 1, admin: 2)
+    is_expected.to define_enum_for(:role).with_values(
+      user: 0, staff: 1, admin: 2
+    )
+  end
+
+  describe 'associations' do
+    it do
+      is_expected.to have_many(:projects).class_name('Project').with_foreign_key(
+        'created_by'
+      ).dependent(:destroy)
+    end
+
+    it do
+      is_expected.to have_many(:tasks).class_name('Task').with_foreign_key(
+        'assigned_to'
+      ).dependent(:destroy)
+    end
   end
 
   describe 'validations' do

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_10_21_085245) do
+ActiveRecord::Schema.define(version: 2020_10_22_133234) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -36,12 +36,33 @@ ActiveRecord::Schema.define(version: 2020_10_21_085245) do
     t.index ["key"], name: "index_active_storage_blobs_on_key", unique: true
   end
 
-  create_table "jwt_denylists", force: :cascade do |t|
+  create_table "jwt_denylist", force: :cascade do |t|
     t.string "jti"
     t.datetime "exp"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
-    t.index ["jti"], name: "index_jwt_denylists_on_jti"
+    t.index ["jti"], name: "index_jwt_denylist_on_jti"
+  end
+
+  create_table "projects", force: :cascade do |t|
+    t.string "name"
+    t.integer "created_by"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["created_by"], name: "index_projects_on_created_by"
+  end
+
+  create_table "tasks", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.string "summary"
+    t.string "description"
+    t.integer "status", default: 0
+    t.integer "assigned_to"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["assigned_to"], name: "index_tasks_on_assigned_to"
+    t.index ["project_id"], name: "index_tasks_on_project_id"
+    t.index ["status"], name: "index_tasks_on_status"
   end
 
   create_table "users", force: :cascade do |t|
@@ -60,4 +81,7 @@ ActiveRecord::Schema.define(version: 2020_10_21_085245) do
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "projects", "users", column: "created_by"
+  add_foreign_key "tasks", "projects"
+  add_foreign_key "tasks", "users", column: "assigned_to"
 end
