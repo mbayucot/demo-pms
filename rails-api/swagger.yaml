@@ -152,7 +152,7 @@ paths:
           description: Not Found
       security:
         - bearerAuth: []
-    put:
+    patch:
       tags:
         - "v1/project"
       summary: Updates a project
@@ -273,7 +273,7 @@ paths:
           description: Not Found
       security:
         - bearerAuth: []
-    put:
+    patch:
       tags:
         - "v1/task"
       summary: Updates a task
@@ -314,7 +314,355 @@ paths:
       security:
         - bearerAuth: []
 
+  /admin/projects:
+    get:
+      tags:
+        - "admin/project"
+      summary: Returns a list of projects
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    type: array
+                    items:
+                      type: object
+      security:
+        - bearerAuth: []
+  /admin/projects/{projectId}:
+    get:
+      tags:
+        - "admin/project"
+      summary: Finds a project by ID
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+        "404":
+          description: Not Found
+      security:
+        - bearerAuth: []
+    patch:
+      tags:
+        - "admin/project"
+      summary: Updates a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Unprocessable Entity
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - "admin/project"
+      summary: Deletes a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          type: integer
+      responses:
+        "204":
+          description: No Content
+      security:
+        - bearerAuth: []
+
+  /admin/projects/{projectId}/tasks/:
+    get:
+      tags:
+        - "admin/task"
+      summary: Returns a list of tasks
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    type: array
+                    items:
+                      type: object
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - "admin/task"
+      summary: Creates a new task
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                summary:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Unprocessable Entity
+      security:
+        - bearerAuth: []
+  /admin/tasks/{taskId}:
+    get:
+      tags:
+        - "admin/task"
+      summary: Finds a task by ID
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  summary:
+                    type: string
+                  description:
+                    type: string
+        "404":
+          description: Not Found
+      security:
+        - bearerAuth: []
+    patch:
+      tags:
+        - "admin/task"
+      summary: Updates a task
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                summary:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Unprocessable Entity
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - "admin/task"
+      summary: Deletes a task
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          type: integer
+      responses:
+        "204":
+          description: No Content
+      security:
+        - bearerAuth: []
+
+  /admin/users:
+    get:
+      tags:
+        - "admin/user"
+      summary: Returns a list of users
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entries:
+                    type: array
+                    items:
+                      type: object
+                  meta:
+                    type: array
+                    items:
+                      type: object
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - "admin/user"
+      summary: Creates a new user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                password:
+                  type: string
+                role:
+                  $ref: "#/components/schemas/Role"
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Unprocessable Entity
+      security:
+        - bearerAuth: []
+  /admin/users/{userId}:
+    get:
+      tags:
+        - "admin/user"
+      summary: Finds a user by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  email:
+                    type: string
+                  first_name:
+                    type: string
+                  last_name:
+                    type: string
+                  role:
+                    $ref: "#/components/schemas/Role"
+        "404":
+          description: Not Found
+      security:
+        - bearerAuth: []
+    patch:
+      tags:
+        - "admin/user"
+      summary: Updates a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                password:
+                  type: string
+                role:
+                  $ref: "#/components/schemas/Role"
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Unprocessable Entity
+      security:
+        - bearerAuth: []
+    delete:
+      tags:
+        - "admin/user"
+      summary: Deletes a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          type: integer
+      responses:
+        "204":
+          description: No Content
+      security:
+        - bearerAuth: []
+
 components:
+  schemas:
+    Role:
+      type: string
+      enum:
+        - client
+        - staff
+        - admin
+
   securitySchemes:
     bearerAuth:
       description: authorization token

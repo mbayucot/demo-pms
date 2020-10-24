@@ -1,6 +1,6 @@
 FactoryBot.define do
   factory :project do
     name { Faker::Name.unique.name }
-    created_by factory: :user
+    association :user
   end
 end

@@ -1,5 +1,5 @@
 class User < ApplicationRecord
-  enum role: { user: 0, staff: 1, admin: 2 }
+  enum role: { client: 0, staff: 1, admin: 2 }
 
   has_many :projects,
            foreign_key: 'created_by', class_name: 'Project', dependent: :destroy
@@ -7,7 +7,6 @@ class User < ApplicationRecord
            foreign_key: 'assigned_to', class_name: 'Task', dependent: :destroy
 
   validates :email, presence: true
-  validates :password, presence: true
 
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable

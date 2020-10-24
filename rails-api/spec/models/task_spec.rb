@@ -7,10 +7,14 @@ RSpec.describe Task, type: :model do
     )
   end
 
-  it do
-    is_expected.to belong_to(:user).class_name('User').with_foreign_key(
-      'assigned_to'
-    ).optional
+  describe 'associations' do
+    it { is_expected.to belong_to(:project) }
+
+    it do
+      is_expected.to belong_to(:user).class_name('User').with_foreign_key(
+        'assigned_to'
+      ).optional
+    end
   end
 
   describe 'validations' do

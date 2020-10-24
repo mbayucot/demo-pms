@@ -1,7 +1,7 @@
-class V1::ProjectsController < ApplicationController
+class Admin::ProjectsController < ApplicationController
   before_action :set_project, only: %i[show update destroy]
 
-  # GET /v1/projects
+  # GET /admin/projects
   def index
     @projects = policy_scope(Project).paginate(page: params[:page])
 
@@ -11,26 +11,19 @@ class V1::ProjectsController < ApplicationController
            root: 'entries'
   end
 
-  # GET /v1/projects/1
+  # GET /admin/projects/1
   def show
     render json: @project
   end
 
-  # POST /v1/projects
-  def create
-    @project = authorize current_user.projects.create!(project_params)
-
-    render json: @project, status: :created
-  end
-
-  # PATCH/PUT /v1/projects/1
+  # PATCH/PUT /admin/projects/1
   def update
     @project.update!(project_params)
 
     render json: @project
   end
 
-  # DELETE /v1/projects/1
+  # DELETE /admin/projects/1
   def destroy
     @project.destroy
   end
@@ -42,6 +35,7 @@ class V1::ProjectsController < ApplicationController
     authorize @project
   end
 
+  # Only allow a trusted parameter "white list" through.
   def project_params
     params.fetch(:project, {}).permit(:name)
   end

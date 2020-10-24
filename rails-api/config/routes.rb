@@ -5,6 +5,13 @@ Rails.application.routes.draw do
         resources :tasks, shallow: true
       end
     end
+
+    namespace :admin do
+      resources :projects, except: :create do
+        resources :tasks, shallow: true
+      end
+      resources :users
+    end
   end
 
   devise_for :users,

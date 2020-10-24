@@ -1,7 +1,10 @@
 class ApplicationController < ActionController::API
   include ExceptionHandler
+  include Pundit
 
   before_action :authenticate_user!
+
+  rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
 
   private
 
@@ -11,5 +14,10 @@ class ApplicationController < ActionController::API
       total_pages: collection.total_pages,
       total_count: collection.total_entries
     }
+  end
+
+  def user_not_authorized
+    render json: { error: 'You cannot perform this action.' },
+           status: :forbidden
   end
 end

@@ -7,3 +7,9 @@ RSpec/MultipleMemoizedHelpers:
   Enabled: false
 RSpec/ExampleLength:
   Max: 6
+RSpec/ContextWording:
+  Prefixes:
+    - when
+    - with
+    - without
+    - being
