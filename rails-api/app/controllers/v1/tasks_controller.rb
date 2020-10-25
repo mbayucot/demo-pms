@@ -21,7 +21,7 @@ class V1::TasksController < ApplicationController
   def create
     @task = authorize @project.tasks.create!(task_params)
 
-    render json: @task, status: :created, location: @task
+    render json: @task, status: :create
   end
 
   # PATCH/PUT /v1/tasks/1

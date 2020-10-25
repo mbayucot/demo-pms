@@ -24,4 +24,15 @@ RSpec.describe User, type: :model do
     it { is_expected.to validate_presence_of(:email) }
     it { is_expected.to validate_presence_of(:password) }
   end
+
+  describe 'avatar' do
+    it { is_expected.to validate_attached_of(:avatar) }
+
+    it do
+      is_expected.to validate_content_type_of(:avatar).allowing(
+        'image/png',
+        'image/jpeg'
+      )
+    end
+  end
 end

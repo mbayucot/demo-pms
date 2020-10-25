@@ -21,8 +21,8 @@ gem 'pundit', '~> 2.1.0'
 gem 'active_model_serializers', '0.10.10'
 # Pagination
 gem 'will_paginate', '3.3.0'
-# Maps controller filters to resource scopes
-gem 'has_scope', '0.7.2'
+# Validations for Active Storage
+gem 'active_storage_validations', '0.9.0'
 # Background processing
 gem 'sidekiq', '~> 6.0.5'
 # Set jobs to be run in specified time

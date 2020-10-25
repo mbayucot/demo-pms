@@ -7,11 +7,19 @@ servers:
   - url: http://localhost:4000
 tags:
   - name: user
-    description: Operations about user
+    description: Operations about unauthenticated user
+  - name: "v1/user"
+    description: Operations about authenticated user
   - name: "v1/project"
     description: Operations about a user's project
   - name: "v1/task"
     description: Operations about a user's task
+  - name: "admin/project"
+    description: Operations about project management
+  - name: "admin/task"
+    description: Operations about task management
+  - name: "admin/user"
+    description: Operations about user management
 
 paths:
   /signup:
@@ -84,6 +92,78 @@ paths:
         "200":
           description: OK
 
+  /users/show:
+    get:
+      tags:
+        - "v1/user"
+      summary: Returns a user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  email:
+                    type: string
+                  first_name:
+                    type: string
+                  last_name:
+                    type: string
+  /users/update:
+    patch:
+      tags:
+        - "v1/user"
+      summary: Updates a user
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                avatar:
+                  type: file
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Unprocessable Entity
+      security:
+        - bearerAuth: []
+  /users/update_password:
+    patch:
+      tags:
+        - "v1/user"
+      summary: Updates a user's password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                current_password:
+                  type: string
+                password:
+                  type: string
+                password_confirmation:
+                  type: string
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Unprocessable Entity
+      security:
+        - bearerAuth: []
+
   /projects:
     get:
       tags:
@@ -97,14 +177,10 @@ paths:
               schema:
                 type: object
                 properties:
-                  entries:
-                    type: array
-                    items:
-                      type: object
-                  meta:
-                    type: array
-                    items:
-                      type: object
+                  id:
+                    type: integer
+                  name:
+                    type: string
       security:
         - bearerAuth: []
     post:

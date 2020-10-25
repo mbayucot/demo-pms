@@ -21,7 +21,7 @@ class Admin::TasksController < ApplicationController
   def create
     @task = @project.tasks.create!(task_params)
 
-    render json: @task, status: :created, location: @task
+    render json: @task, status: :created
   end
 
   # PATCH/PUT /admin/tasks/1
