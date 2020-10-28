@@ -21,6 +21,8 @@ gem 'pundit', '~> 2.1.0'
 gem 'active_model_serializers', '0.10.10'
 # Pagination
 gem 'will_paginate', '3.3.0'
+# Maps controller filters to resource scopes
+gem 'has_scope', '0.7.2'
 # Validations for Active Storage
 gem 'active_storage_validations', '0.9.0'
 # Background processing
@@ -58,7 +60,7 @@ group :test do
   gem 'pundit-matchers'
   gem 'rspec-json_expectations'
   gem 'rubocop-rspec', '~> 1.44.0', require: false
-  gem 'shoulda-matchers', '~> 4.3.0'
+  gem 'shoulda-matchers', '~> 4.4.1'
   gem 'simplecov', require: false
 end
 

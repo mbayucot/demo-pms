@@ -15,4 +15,14 @@ RSpec.describe Project, type: :model do
     it { is_expected.to validate_presence_of(:name) }
     it { is_expected.to validate_uniqueness_of(:name).scoped_to(:created_by) }
   end
+
+  describe 'scopes' do
+    describe '.by_query' do
+      it 'finds projects by name' do
+        query = Faker::Lorem.word
+        expect(described_class.by_query(query).to_sql).to eq described_class
+             .where('lower(name) ILIKE :query', query: "%#{query}%").to_sql
+      end
+    end
+  end
 end

@@ -2,9 +2,14 @@ class V1::TasksController < ApplicationController
   before_action :set_project, only: %i[index create]
   before_action :set_task, only: %i[show update destroy]
 
+  has_scope :by_query
+  has_scope :by_status
+  has_scope :by_sort, using: %i[column direction], type: :hash
+
   # GET /v1/projects/:project_id/tasks
   def index
     @tasks = @project.tasks.paginate(page: params[:page])
+    @tasks = apply_scopes(@tasks).all
 
     render json: @tasks,
            meta: pagination_dict(@tasks),
@@ -21,7 +26,7 @@ class V1::TasksController < ApplicationController
   def create
     @task = authorize @project.tasks.create!(task_params)
 
-    render json: @task, status: :create
+    render json: @task, status: :created
   end
 
   # PATCH/PUT /v1/tasks/1

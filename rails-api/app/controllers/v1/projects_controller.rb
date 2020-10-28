@@ -1,9 +1,13 @@
 class V1::ProjectsController < ApplicationController
   before_action :set_project, only: %i[show update destroy]
 
+  has_scope :by_query
+  has_scope :by_sort, using: %i[column direction], type: :hash
+
   # GET /v1/projects
   def index
     @projects = policy_scope(Project).paginate(page: params[:page])
+    @projects = apply_scopes(@projects).all
 
     render json: @projects,
            meta: pagination_dict(@projects),

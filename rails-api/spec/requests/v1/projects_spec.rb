@@ -15,20 +15,64 @@ RSpec.describe '/v1/projects', type: :request do
   end
 
   describe 'GET /index' do
-    before { get projects_url, headers: valid_headers, as: :json }
+    context 'with no parameter' do
+      before { get projects_url, headers: valid_headers, as: :json }
 
-    it 'returns 200' do
-      expect(response).to have_http_status(:ok)
+      it 'returns 200' do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'returns a paginated result' do
+        expect(json['entries'].size).to eq(10)
+      end
+
+      it 'returns a pagination metadata' do
+        expect(json['meta']).to include_json(
+          'current_page': 1, 'total_pages': 2, 'total_count': 15
+        )
+      end
     end
 
-    it 'returns a paginated result' do
-      expect(json['entries'].size).to eq(10)
+    context 'with search parameter' do
+      before do
+        get projects_url(by_query: project.name),
+            headers: valid_headers, as: :json
+      end
+
+      it 'returns 200' do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'returns a search result' do
+        expect(json['entries'].size).to eq(1)
+      end
+
+      it 'returns a pagination metadata' do
+        expect(json['meta']).to include_json(
+          'current_page': 1, 'total_pages': 1, 'total_count': 1
+        )
+      end
     end
 
-    it 'returns a pagination metadata' do
-      expect(json['meta']).to include_json(
-        'current_page': 1, 'total_pages': 2, 'total_count': 15
-      )
+    context 'with sort parameters' do
+      before do
+        get projects_url(by_sort: { column: 'name', direction: 'desc' }),
+            headers: valid_headers, as: :json
+      end
+
+      it 'returns 200' do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'returns a search result' do
+        expect(json['entries'].size).to eq(10)
+      end
+
+      it 'returns a pagination metadata' do
+        expect(json['meta']).to include_json(
+          'current_page': 1, 'total_pages': 2, 'total_count': 15
+        )
+      end
     end
   end
 

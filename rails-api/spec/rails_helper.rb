@@ -25,6 +25,7 @@ require 'support/database_cleaner'
 require 'support/factory_bot'
 require 'support/files_test_helper'
 require 'support/shoulda_matchers'
+require 'support/devise'
 require 'pundit/rspec'
 
 # Checks for pending migrations and applies them before tests are run.

@@ -1,9 +1,14 @@
 class Admin::UsersController < ApplicationController
   before_action :set_user, only: %i[show update destroy]
 
+  has_scope :by_query
+  has_scope :by_role
+  has_scope :by_sort, using: %i[column direction], type: :hash
+
   # GET /admin/users
   def index
     @users = policy_scope(User).paginate(page: params[:page])
+    @users = apply_scopes(@users).all
 
     render json: @users,
            meta: pagination_dict(@users),

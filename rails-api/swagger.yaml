@@ -8,12 +8,12 @@ servers:
 tags:
   - name: user
     description: Operations about unauthenticated user
-  - name: "v1/user"
-    description: Operations about authenticated user
   - name: "v1/project"
     description: Operations about a user's project
   - name: "v1/task"
     description: Operations about a user's task
+  - name: "v1/user"
+    description: Operations about authenticated user
   - name: "admin/project"
     description: Operations about project management
   - name: "admin/task"

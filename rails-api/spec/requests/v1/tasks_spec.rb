@@ -40,6 +40,72 @@ RSpec.describe '/v1/tasks', type: :request do
       end
     end
 
+    context 'with search parameter' do
+      before do
+        get project_tasks_url(project_id: project.id, by_query: task.summary),
+            headers: valid_headers, as: :json
+      end
+
+      it 'returns 200' do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'returns a search result' do
+        expect(json['entries'].size).to eq(1)
+      end
+
+      it 'returns a pagination metadata' do
+        expect(json['meta']).to include_json(
+          'current_page': 1, 'total_pages': 1, 'total_count': 1
+        )
+      end
+    end
+
+    context 'with status parameter' do
+      before do
+        get project_tasks_url(project_id: project.id, by_status: 1),
+            headers: valid_headers, as: :json
+      end
+
+      it 'returns 200' do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'returns a search result' do
+        expect(json['entries'].size).to eq(0)
+      end
+
+      it 'returns a pagination metadata' do
+        expect(json['meta']).to include_json(
+          'current_page': 1, 'total_pages': 1, 'total_count': 0
+        )
+      end
+    end
+
+    context 'with sort parameters' do
+      before do
+        get project_tasks_url(
+              project_id: project.id,
+              by_sort: { column: 'summary', direction: 'desc' }
+            ),
+            headers: valid_headers, as: :json
+      end
+
+      it 'returns 200' do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'returns a search result' do
+        expect(json['entries'].size).to eq(10)
+      end
+
+      it 'returns a pagination metadata' do
+        expect(json['meta']).to include_json(
+          'current_page': 1, 'total_pages': 2, 'total_count': 15
+        )
+      end
+    end
+
     context 'with invalid parameters' do
       it 'returns 404' do
         get project_tasks_url(project_id: 0), headers: valid_headers, as: :json
