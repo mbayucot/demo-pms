@@ -8,8 +8,7 @@ class Admin::TasksController < ApplicationController
 
   # GET /admin/projects/:project_id/tasks
   def index
-    @tasks = @project.tasks.paginate(page: params[:page])
-    @tasks = apply_scopes(@tasks).all
+    @tasks = apply_scopes(@project.tasks).paginate(page: params[:page])
 
     render json: @tasks,
            meta: pagination_dict(@tasks),

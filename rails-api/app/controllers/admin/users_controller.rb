@@ -7,8 +7,8 @@ class Admin::UsersController < ApplicationController
 
   # GET /admin/users
   def index
-    @users = policy_scope(User).paginate(page: params[:page])
-    @users = apply_scopes(@users).all
+    @users = authorize policy_scope(User)
+    @users = apply_scopes(@users).paginate(page: params[:page])
 
     render json: @users,
            meta: pagination_dict(@users),

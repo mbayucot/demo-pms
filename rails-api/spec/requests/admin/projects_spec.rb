@@ -55,6 +55,27 @@ RSpec.describe '/admin/projects', type: :request do
       end
     end
 
+    context 'with created_by parameter' do
+      before do
+        get admin_projects_url(by_created_by: user.id),
+            headers: valid_headers, as: :json
+      end
+
+      it 'returns 200' do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'returns a search result' do
+        expect(json['entries'].size).to eq(10)
+      end
+
+      it 'returns a pagination metadata' do
+        expect(json['meta']).to include_json(
+          'current_page': 1, 'total_pages': 2, 'total_count': 15
+        )
+      end
+    end
+
     context 'with sort parameters' do
       before do
         get admin_projects_url(by_sort: { column: 'name', direction: 'desc' }),
@@ -79,7 +100,9 @@ RSpec.describe '/admin/projects', type: :request do
 
   describe 'GET /show' do
     context 'with valid parameters' do
-      before { get admin_project_url(project), headers: valid_headers, as: :json }
+      before do
+        get admin_project_url(project), headers: valid_headers, as: :json
+      end
 
       it 'returns 200' do
         expect(response).to have_http_status(:ok)

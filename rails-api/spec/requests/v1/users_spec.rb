@@ -123,4 +123,13 @@ RSpec.describe '/v1/users', type: :request do
       end
     end
   end
+
+  describe 'DELETE /destroy_avatar' do
+    it 'destroys the attached avatar', :aggregate_failures do
+      delete users_destroy_avatar_url, headers: valid_headers, as: :json
+      user.reload
+      expect(user.avatar.attached?).to be_falsey
+      expect(response).to have_http_status(:no_content)
+    end
+  end
 end

@@ -2,6 +2,8 @@ Rails.application.routes.draw do
   defaults format: :json do
     scope module: :v1 do
       resources :projects do
+        collection { post :import }
+
         resources :tasks, shallow: true
       end
 
@@ -9,6 +11,7 @@ Rails.application.routes.draw do
         get :show
         patch :update
         patch :update_password
+        delete :destroy_avatar
       end
     end
 

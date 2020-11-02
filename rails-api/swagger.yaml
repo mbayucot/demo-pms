@@ -163,12 +163,54 @@ paths:
           description: Unprocessable Entity
       security:
         - bearerAuth: []
+  /users/destroy_avatar:
+    delete:
+      tags:
+        - "v1/user"
+      summary: Deletes a users' avatar
+      responses:
+        "200":
+          description: OK
+      security:
+        - bearerAuth: [ ]
 
   /projects:
     get:
       tags:
         - "v1/project"
       summary: Returns a list of projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                page:
+                  type: integer
+                by_query:
+                  type: string
+                by_sort:
+                  type: object
+                  properties:
+                    column:
+                      type: string
+                    direction:
+                      type: string
+          text/csv:
+            schema:
+              type: object
+              properties:
+                page:
+                  type: integer
+                by_query:
+                  type: string
+                by_sort:
+                  type: object
+                  properties:
+                    column:
+                      type: string
+                    direction:
+                      type: string
       responses:
         "200":
           description: OK
@@ -266,6 +308,26 @@ paths:
           description: No Content
       security:
         - bearerAuth: []
+  /projects/import:
+    post:
+      tags:
+        - "v1/project"
+      summary: Imports projects from csv
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: file
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Unprocessable Entity
+      security:
+        - bearerAuth: []
 
   /projects/{projectId}/tasks/:
     get:
@@ -277,6 +339,25 @@ paths:
           in: path
           required: true
           type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                page:
+                  type: integer
+                by_query:
+                  type: string
+                by_status:
+                  type: string
+                by_sort:
+                  type: object
+                  properties:
+                    column:
+                      type: string
+                    direction:
+                      type: string
       responses:
         "200":
           description: OK
@@ -395,6 +476,25 @@ paths:
       tags:
         - "admin/project"
       summary: Returns a list of projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                page:
+                  type: integer
+                by_query:
+                  type: string
+                by_created_by:
+                  type: integer
+                by_sort:
+                  type: object
+                  properties:
+                    column:
+                      type: string
+                    direction:
+                      type: string
       responses:
         "200":
           description: OK
@@ -488,6 +588,25 @@ paths:
           in: path
           required: true
           type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                page:
+                  type: integer
+                by_query:
+                  type: string
+                by_status:
+                  type: string
+                by_sort:
+                  type: object
+                  properties:
+                    column:
+                      type: string
+                    direction:
+                      type: string
       responses:
         "200":
           description: OK
@@ -606,6 +725,25 @@ paths:
       tags:
         - "admin/user"
       summary: Returns a list of users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                page:
+                  type: integer
+                by_query:
+                  type: string
+                by_role:
+                  type: string
+                by_sort:
+                  type: object
+                  properties:
+                    column:
+                      type: string
+                    direction:
+                      type: string
       responses:
         "200":
           description: OK

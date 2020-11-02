@@ -1,6 +1,11 @@
 require 'rails_helper'
 
 RSpec.describe Project, type: :model do
+  describe 'constants' do
+    it { expect(subject.class).to be_const_defined(:CSV_IMPORT) }
+    it { expect(subject.class).to be_const_defined(:CSV_EXPORT) }
+  end
+
   describe 'associations' do
     it do
       is_expected.to belong_to(:user).class_name('User').with_foreign_key(
@@ -22,6 +27,15 @@ RSpec.describe Project, type: :model do
         query = Faker::Lorem.word
         expect(described_class.by_query(query).to_sql).to eq described_class
              .where('lower(name) ILIKE :query', query: "%#{query}%").to_sql
+      end
+    end
+
+    describe '.by_created_by' do
+      it 'finds projects by created_by' do
+        created_by = 1
+        expect(
+          described_class.by_created_by(created_by).to_sql
+        ).to eq described_class.where(created_by: created_by).to_sql
       end
     end
   end

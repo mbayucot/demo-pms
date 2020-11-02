@@ -8,8 +8,7 @@ class V1::TasksController < ApplicationController
 
   # GET /v1/projects/:project_id/tasks
   def index
-    @tasks = @project.tasks.paginate(page: params[:page])
-    @tasks = apply_scopes(@tasks).all
+    @tasks = apply_scopes(@project.tasks).paginate(page: params[:page])
 
     render json: @tasks,
            meta: pagination_dict(@tasks),
@@ -45,6 +44,7 @@ class V1::TasksController < ApplicationController
 
   def set_project
     @project = policy_scope(Project).find(params[:project_id])
+    authorize @project
   end
 
   def set_task

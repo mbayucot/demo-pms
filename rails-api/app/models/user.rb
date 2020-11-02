@@ -9,6 +9,7 @@ class User < ApplicationRecord
            foreign_key: 'created_by', class_name: 'Project', dependent: :destroy
   has_many :tasks,
            foreign_key: 'assigned_to', class_name: 'Task', dependent: :destroy
+  has_many :imports
 
   validates :email, presence: true
   validates :avatar, content_type: %i[png jpg jpeg]

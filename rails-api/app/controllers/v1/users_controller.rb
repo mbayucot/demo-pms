@@ -24,6 +24,12 @@ class V1::UsersController < ApplicationController
     end
   end
 
+  # DELETE /v1/users/destroy_avatar
+  def destroy_avatar
+    @user = current_user
+    @user.avatar.purge_later
+  end
+
   private
 
   def user_params

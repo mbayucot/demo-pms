@@ -170,4 +170,58 @@ RSpec.describe '/v1/projects', type: :request do
       expect(response).to have_http_status(:no_content)
     end
   end
+
+  describe 'GET projects/index.csv' do
+    it 'with valid parameters' do
+      get projects_url(uuid: Faker::Number.number(digits: 10), format: :csv),
+          headers: valid_headers
+      expect(response).to have_http_status(:accepted)
+    end
+
+    it 'with invalid parameters' do
+      get projects_url(format: :csv), headers: valid_headers
+      expect(response).to have_http_status(:bad_request)
+    end
+  end
+
+  describe 'POST /projects/import' do
+    context 'with valid parameters' do
+      let(:valid_attributes) do
+        {
+          uuid: Faker::Number.number(digits: 10),
+          file: FilesTestHelper.projects_csv
+        }
+      end
+
+      it 'creates new projects' do
+        expect do
+          post import_projects_url,
+               params: valid_attributes, headers: valid_headers
+        end.to change(Import, :count).by(1)
+      end
+
+      it 'returns 201' do
+        post import_projects_url,
+             params: valid_attributes, headers: valid_headers
+        expect(response).to have_http_status(:created)
+      end
+    end
+
+    context 'with invalid parameters' do
+      let(:invalid_attributes) { { uuid: nil } }
+
+      it 'does not create a new Project' do
+        expect do
+          post import_projects_url, params: { task: invalid_attributes }
+        end.to change(Import, :count).by(0)
+      end
+
+      it 'returns 422 with an error message', :aggregate_failures do
+        post import_projects_url,
+             params: invalid_attributes, headers: valid_headers
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(json).to include_json('uuid': ["can't be blank"])
+      end
+    end
+  end
 end

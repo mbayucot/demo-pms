@@ -20,6 +20,8 @@ RSpec.describe User, type: :model do
         'assigned_to'
       ).dependent(:destroy)
     end
+
+    it { is_expected.to have_many(:imports) }
   end
 
   describe 'validations' do

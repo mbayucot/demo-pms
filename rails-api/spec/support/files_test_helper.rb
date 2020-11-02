@@ -3,7 +3,7 @@ module FilesTestHelper
   extend ActionDispatch::TestProcess
 
   def png_name
-    'test-image.png'
+    'test.png'
   end
 
   def png
@@ -11,7 +11,7 @@ module FilesTestHelper
   end
 
   def jpg_name
-    'test-image.jpg'
+    'test.jpg'
   end
 
   def jpg
@@ -24,6 +24,22 @@ module FilesTestHelper
 
   def pdf
     upload(pdf_name, 'application/pdf')
+  end
+
+  def csv_name
+    'test.csv'
+  end
+
+  def csv
+    upload(csv_name, 'text/csv')
+  end
+
+  def projects_csv_name
+    'projects.csv'
+  end
+
+  def projects_csv
+    upload(projects_csv_name, 'text/csv')
   end
 
   private
