@@ -47,7 +47,7 @@ paths:
                       type: string
       responses:
         "201":
-          description: OK
+          description: Created
           headers:
             Authorization:
               description: Authorization token
@@ -91,6 +91,70 @@ paths:
       responses:
         "200":
           description: OK
+  /confirmation:
+    get:
+      tags:
+        - user
+      summary: Confirm user
+      parameters:
+        - name: confirmation_token
+          in: query
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Unprocessable Entity
+  /password:
+    post:
+      tags:
+        - user
+      summary: Send reset password email
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: object
+                  properties:
+                    email:
+                      description: email
+                      type: string
+      responses:
+        "201":
+          description: Created
+        "422":
+          description: Unprocessable Entity
+    patch:
+      tags:
+        - user
+      summary: Reset user's password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: object
+                  properties:
+                    reset_password_token:
+                      description: reset_password_token
+                      type: string
+                    password:
+                      description: password
+                      type: string
+                    confirm_password:
+                      description: password
+                      type: string
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Unprocessable Entity
 
   /users/show:
     get:
@@ -172,7 +236,7 @@ paths:
         "200":
           description: OK
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
 
   /projects:
     get:
