@@ -6,7 +6,7 @@ RSpec.describe ExportJob, type: :job do
       ActiveJob::Base.queue_adapter = :test
       export =
         Export.new(Faker::Number.number(digits: 10), User.to_s, User.all.to_sql)
-      expect { ExportJob.perform_later(export) }.to have_enqueued_job
+      expect { described_class.perform_later(export) }.to have_enqueued_job
     end
   end
 end

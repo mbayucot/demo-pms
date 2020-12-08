@@ -5,7 +5,7 @@ RSpec.describe ImportJob, type: :job do
     it 'imports a csv' do
       ActiveJob::Base.queue_adapter = :test
       document = create(:import)
-      expect { ImportJob.perform_later(document) }.to have_enqueued_job
+      expect { described_class.perform_later(document) }.to have_enqueued_job
     end
   end
 end
