@@ -1,15 +1,48 @@
 require 'rails_helper'
 
 RSpec.describe 'Users::Sessions', type: :request do
-  let!(:user) { create(:user) }
+  let(:password) { Faker::Internet.password }
+  let!(:user) { create(:user, password: password) }
+  let!(:admin) { create(:user, password: password, role: :admin) }
+  let!(:staff) { create(:user, password: password, role: :staff) }
 
-  let(:valid_attributes) { user.slice(:email, :password) }
   let(:invalid_attributes) do
-    { email: Faker::Internet.email, password: Faker::Internet.password }
+    { email: Faker::Internet.email, password: password, domain: "client" }
   end
 
   describe 'POST /login' do
     context 'with valid parameters' do
+      let(:valid_attributes) { { email: user.email, password: password, domain: "client" } }
+      before do
+        post user_session_url, params: { user: valid_attributes }, as: :json
+      end
+
+      it 'returns 201' do
+        expect(response).to have_http_status(:created)
+      end
+
+      it 'returns an authorization token' do
+        expect(response.headers).to have_key('Authorization')
+      end
+    end
+
+    context 'with valid parameters and admin role' do
+      let(:valid_attributes) { { email: admin.email, password: password, domain: "admin" } }
+      before do
+        post user_session_url, params: { user: valid_attributes }, as: :json
+      end
+
+      it 'returns 201' do
+        expect(response).to have_http_status(:created)
+      end
+
+      it 'returns an authorization token' do
+        expect(response.headers).to have_key('Authorization')
+      end
+    end
+
+    context 'with valid parameters and staff role' do
+      let(:valid_attributes) { { email: staff.email, password: password, domain: "admin" } }
       before do
         post user_session_url, params: { user: valid_attributes }, as: :json
       end
@@ -33,7 +66,7 @@ RSpec.describe 'Users::Sessions', type: :request do
       end
 
       it 'returns an error message' do
-        expect(json['error']).to match(/Invalid Email or password/)
+        expect(json['error']).to match(/Invalid Email, Domain or password./)
       end
     end
   end

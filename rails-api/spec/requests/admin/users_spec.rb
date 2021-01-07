@@ -111,7 +111,7 @@ RSpec.describe '/admin/users', type: :request do
       end
 
       it 'returns a user' do
-        expect(json).to include_json(email: user.email)
+        expect(response.body).to eq(ActiveModelSerializers::SerializableResource.new(user).to_json)
       end
     end
 

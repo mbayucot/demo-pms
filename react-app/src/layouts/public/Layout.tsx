@@ -4,11 +4,11 @@ import Container from "react-bootstrap/Container";
 import Header from "./Header";
 import Footer from "./Footer";
 
-interface Props {
+interface LayoutProps {
   children: React.ReactNode;
 }
 
-const Layout: FC<Props> = ({ children }) => {
+const Layout: FC<LayoutProps> = ({ children }) => {
   return (
     <>
       <Header />

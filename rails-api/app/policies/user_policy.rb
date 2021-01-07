@@ -1,6 +1,6 @@
 class UserPolicy < ApplicationPolicy
   def index?
-    !user.client?
+    true
   end
 
   def show?
@@ -21,7 +21,7 @@ class UserPolicy < ApplicationPolicy
 
   class Scope < Scope
     def resolve
-      scope.all
+      user.client? ? scope.where(id: user.id).or(scope.where(role: :staff)) : scope.all
     end
   end
 end

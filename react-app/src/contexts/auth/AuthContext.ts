@@ -1,6 +1,9 @@
 import { createContext } from "react";
 
-import { AuthState, initialAuthState, User } from "./state";
+import { AuthState, initialAuthState } from "./state";
+import { LoginFormValues } from "../../forms/LoginForm";
+import { RegisterFormValues } from "../../forms/RegisterForm";
+import { User } from "../../types/models";
 
 const stub = (): never => {
   throw new Error("You forgot to wrap your component in <AuthProvider>.");
@@ -11,12 +14,14 @@ const initialContext = {
   register: stub,
   login: stub,
   logout: stub,
+  updateUser: stub,
 };
 
 export interface AuthContextInterface extends AuthState {
-  register: (values: User) => Promise<void>;
-  login: (values: User) => Promise<void>;
+  register: (values: RegisterFormValues) => Promise<boolean>;
+  login: (values: LoginFormValues, domain: string) => Promise<boolean>;
   logout: () => Promise<void>;
+  updateUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextInterface>(initialContext);

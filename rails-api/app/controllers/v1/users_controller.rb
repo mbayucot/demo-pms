@@ -1,5 +1,19 @@
 class V1::UsersController < ApplicationController
-  # GET /v1/users
+  has_scope :by_query
+  has_scope :by_role
+
+  # GET /v1/users/index
+  def index
+    @users = authorize policy_scope(User)
+    @users = apply_scopes(@users).paginate(page: params[:page])
+
+    render json: @users,
+           meta: pagination_dict(@users),
+           adapter: :json,
+           root: 'entries'
+  end
+
+  # GET /v1/users/show
   def show
     render json: current_user
   end
@@ -28,6 +42,8 @@ class V1::UsersController < ApplicationController
   def destroy_avatar
     @user = current_user
     @user.avatar.purge_later
+
+    render json: @user
   end
 
   private

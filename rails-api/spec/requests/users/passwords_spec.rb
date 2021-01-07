@@ -1,14 +1,17 @@
 require 'rails_helper'
 
 RSpec.describe 'Users::Passwords', type: :request do
-  describe 'POST /password' do
-    let(:user) { create(:user) }
+  let(:client) { create(:user, :with_confirmed) }
 
+  describe 'POST /password' do
     context 'with valid parameters' do
-      it 'returns 201' do
+      it 'returns 201', :aggregate_failures do
         post user_password_url,
-             params: { user: { email: user.email } }, as: :json
+             params: { user: { email: client.email } }, as: :json
         expect(response).to have_http_status(:created)
+
+        client.reload
+        expect(client.reset_password_token).to be_truthy
       end
     end
 

@@ -1,15 +1,16 @@
-import { AuthState, User } from "./state";
+import { AuthState } from "./state";
+import { User } from "../../types";
 
 type Action =
   | { type: "LOGIN_STARTED" }
   | {
-      type: "LOGIN_COMPLETE";
-      user?: User;
+      type: "LOGIN_COMPLETE" | "USER_UPDATED";
+      user: User;
     }
   | { type: "LOGOUT" }
   | { type: "ERROR"; error: string };
 
-export const reducer = (state: AuthState, action: Action): AuthState => {
+const reducer = (state: AuthState, action: Action): AuthState => {
   switch (action.type) {
     case "LOGIN_STARTED":
       return {
@@ -24,6 +25,12 @@ export const reducer = (state: AuthState, action: Action): AuthState => {
         isLoading: false,
         error: undefined,
       };
+    case "USER_UPDATED":
+      return {
+        ...state,
+        isAuthenticated: !!action.user,
+        user: action.user,
+      };
     case "LOGOUT":
       return {
         ...state,
@@ -37,5 +44,9 @@ export const reducer = (state: AuthState, action: Action): AuthState => {
         isAuthenticated: false,
         error: action.error,
       };
+    default:
+      throw new Error();
   }
 };
+
+export default reducer;

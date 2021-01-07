@@ -3,8 +3,11 @@ import axios, { AxiosResponse } from "axios";
 import Cookies from "js-cookie";
 
 import AuthContext from "./AuthContext";
-import { reducer } from "./reducer";
-import { AuthState, initialAuthState, User } from "./state";
+import reducer from "./reducer";
+import { AuthState, initialAuthState } from "./state";
+import { LoginFormValues } from "../../forms/LoginForm";
+import { RegisterFormValues } from "../../forms/RegisterForm";
+import { User } from "../../types/models";
 
 type Props = {
   children?: React.ReactNode;
@@ -22,25 +25,50 @@ const AuthProvider = ({ children }: Props): JSX.Element => {
       initial
   );
 
-  const handleUserResponse = useCallback((response: AxiosResponse) => {
+  const handleUserResponse = useCallback((response: AxiosResponse): Promise<
+    boolean
+  > => {
+    const { data: user } = response;
     Cookies.set(tokenKey, response.headers.authorization, { expires: 1 });
+    const state: AuthState = {
+      isAuthenticated: true,
+      user,
+    };
+    localStorage.setItem(storageKey, JSON.stringify(state));
 
-    dispatch({ type: "LOGIN_COMPLETE", user: response.data });
+    dispatch({ type: "LOGIN_COMPLETE", user });
+
+    return Promise.resolve(true);
   }, []);
 
-  const handleError = useCallback((error) => {
-    const msg = error.response.data.error;
-    dispatch({ type: "ERROR", error: msg });
+  const handleError = useCallback((error): Promise<boolean> => {
+    const { status, data } = error.response;
+    let errorMsg: string;
+    switch (status) {
+      case 401:
+        errorMsg = data;
+        break;
+      case 500:
+      case 503:
+        errorMsg = "Something went wrong!";
+        break;
+      default:
+        errorMsg = "Invalid email or password!";
+        break;
+    }
+    dispatch({ type: "ERROR", error: errorMsg });
 
-    throw new Error(msg);
+    return Promise.resolve(false);
   }, []);
 
   const register = useCallback(
-    async (values: User): Promise<void> => {
+    async (values: RegisterFormValues): Promise<boolean> => {
       dispatch({ type: "LOGIN_STARTED" });
 
       return axios
-        .post("/signup", { user: values })
+        .post("/signup", {
+          user: { ...values },
+        })
         .then(handleUserResponse)
         .catch(handleError);
     },
@@ -48,39 +76,47 @@ const AuthProvider = ({ children }: Props): JSX.Element => {
   );
 
   const login = useCallback(
-    async (values: User): Promise<void> => {
+    async (values: LoginFormValues, domain = "client"): Promise<boolean> => {
       dispatch({ type: "LOGIN_STARTED" });
 
       return axios
-        .post("/login", { user: values })
+        .post("/login", {
+          user: { ...values, ...{ domain: domain } },
+        })
         .then(handleUserResponse)
         .catch(handleError);
     },
     [handleUserResponse, handleError]
   );
 
-  const logout = async (): Promise<void> => {
-    try {
-      await axios.delete("/logout");
+  const logout = useCallback(async (): Promise<void> => {
+    axios
+      .delete("/logout")
+      .then(() => {
+        Cookies.remove(tokenKey);
+        localStorage.removeItem(storageKey);
+        dispatch({ type: "LOGOUT" });
+      })
+      .catch(handleError);
+  }, [handleError]);
 
-      Cookies.remove(tokenKey);
-      dispatch({ type: "LOGOUT" });
-    } catch (error) {
-      dispatch({ type: "ERROR", error: error.response.data.error });
-    }
-  };
+  const updateUser = useCallback(async (user: User): Promise<void> => {
+    dispatch({ type: "USER_UPDATED", user: user });
+  }, []);
 
   useEffect(() => {
-    (async () => {
-      const token = Cookies.get(tokenKey);
-
-      if (!token && state.isAuthenticated) {
-        dispatch({ type: "LOGOUT" });
-      }
-
-      localStorage.setItem(storageKey, JSON.stringify(state));
-    })();
-  }, [state]);
+    let mounted = true;
+    if (mounted) {
+      (async () => {
+        if (!Cookies.get(tokenKey) && state.isAuthenticated) {
+          await logout();
+        }
+      })();
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [state.isAuthenticated, logout]);
 
   return (
     <AuthContext.Provider
@@ -89,6 +125,7 @@ const AuthProvider = ({ children }: Props): JSX.Element => {
         register,
         login,
         logout,
+        updateUser,
       }}
     >
       {children}

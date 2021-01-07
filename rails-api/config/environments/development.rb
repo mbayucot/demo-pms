@@ -51,7 +51,7 @@ Rails.application.configure do
   config.file_watcher = ActiveSupport::EventedFileUpdateChecker
 
   # Mailer
-  config.action_mailer.default_url_options = { host: 'localhost', port: '3000' }
+  config.action_mailer.default_url_options = { host: 'localhost', port: '4000' }
   config.action_mailer.delivery_method = :smtp
   config.action_mailer.raise_delivery_errors = true
   config.action_mailer.perform_deliveries = true
@@ -64,4 +64,6 @@ Rails.application.configure do
     authentication: 'plain',
     enable_starttls_auto: true
   }
+
+  Rails.application.routes.default_url_options = config.action_mailer.default_url_options
 end

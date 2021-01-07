@@ -2,16 +2,19 @@ import React, { FC } from "react";
 import Container from "react-bootstrap/Container";
 
 import Header from "./Header";
+import ErrorHandler from "../ErrorHandler";
 
-interface Props {
+interface LayoutProps {
   children: React.ReactNode;
 }
 
-const Layout: FC<Props> = ({ children }) => {
+const Layout: FC<LayoutProps> = ({ children }) => {
   return (
     <>
       <Header />
-      <Container className="pt-5">{children}</Container>
+      <Container className="mt-4">
+        <ErrorHandler>{children}</ErrorHandler>
+      </Container>
     </>
   );
 };

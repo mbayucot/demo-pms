@@ -7,21 +7,24 @@ class ImportableClass < ActiveRecord::Base
 end
 
 RSpec.describe Importable do
+  let(:user) { create(:user) }
+  let(:params) { { created_by: 1 }.to_json }
+
   context 'with valid class' do
     before { stub_const('ImportableClass::CSV_IMPORT', %i[name].freeze) }
 
     context 'with valid csv' do
       it 'creates projects' do
         expect do
-          ImportableClass.import(FilesTestHelper.projects_csv)
+          ImportableClass.import(FilesTestHelper.projects_csv, { created_by: user.id }.to_json)
         end.to change(ImportableClass, :count).by(2)
       end
     end
 
     context 'with invalid csv' do
       it 'raises an error' do
-        expect { ImportableClass.import(FilesTestHelper.csv) }.to raise_error(
-          SmarterCSV::MissingHeaders
+        expect { ImportableClass.import(FilesTestHelper.csv, { created_by: user.id }.to_json) }.to raise_error(
+           ActiveModel::UnknownAttributeError
         )
       end
     end
@@ -30,11 +33,8 @@ RSpec.describe Importable do
   context 'with invalid class' do
     it 'raises an error' do
       expect do
-        ImportableClass.import(FilesTestHelper.projects_csv)
-      end.to raise_error(
-        Exceptions::MissingRequirement,
-        'Missing constant in ImportableClass: CSV_IMPORT'
-      )
+        ImportableClass.import(FilesTestHelper.projects_csv, { created_by: user.id }.to_json)
+      end.to raise_error(Exceptions::MissingRequirement)
     end
   end
 end

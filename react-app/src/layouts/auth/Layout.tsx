@@ -7,11 +7,11 @@ import Container from "react-bootstrap/Container";
 import { Wrapper } from "./style";
 import logo from "../../assets/images/logo.svg";
 
-interface Props {
+interface LayoutProps {
   children: React.ReactNode;
 }
 
-const Layout: FC<Props> = ({ children }) => {
+const Layout: FC<LayoutProps> = ({ children }) => {
   return (
     <Wrapper>
       <Container fluid={true} className="p-0">

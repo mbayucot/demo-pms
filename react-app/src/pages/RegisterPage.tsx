@@ -1,39 +1,37 @@
-import React, { FC } from "react";
-import { useHistory } from "react-router-dom";
-import * as Yup from "yup";
+import React, { FC, useState } from "react";
+import { useHistory, useLocation } from "react-router-dom";
 import { withFormik } from "formik";
 
-import RegisterForm, { FormValues } from "../forms/RegisterForm";
-import withAuth, { WithAuthProps } from "../contexts/auth/withAuth";
+import RegisterForm, {
+  RegisterFormValues,
+  validationSchema,
+} from "../forms/RegisterForm";
+import { withAuth, WithAuthProps } from "../contexts/auth";
+import { LocationType } from "../types";
 
 const RegisterPage: FC = () => {
   const history = useHistory();
+  const location = useLocation<LocationType>();
+  const { from } = location.state || { from: { pathname: "/projects" } };
+  const [values, setValues] = useState<RegisterFormValues>({
+    email: "",
+    password: "",
+  });
 
   const EnhancedRegisterForm = withAuth(
-    withFormik<WithAuthProps, FormValues>({
-      mapPropsToValues: () => ({ email: "", password: "" }),
-
-      validationSchema: Yup.object().shape({
-        email: Yup.string()
-          .email("Email is not valid")
-          .required("Email is required"),
-        password: Yup.string()
-          .min(4, "Password is Too Short")
-          .max(20, "Password is Too Long")
-          .required("Password is required"),
+    withFormik<WithAuthProps, RegisterFormValues>({
+      mapPropsToValues: () => ({
+        email: values.email || "",
+        password: values.password || "",
       }),
 
-      handleSubmit: async (values: FormValues, { props, ...actions }) => {
-        const { auth } = props;
-        try {
-          await auth.register(values);
-          actions.setSubmitting(false);
+      validationSchema: validationSchema,
 
-          // Redirect
-          history.replace({ pathname: "/projects" });
-        } catch (error) {
-          actions.setSubmitting(false);
-          actions.setErrors({ email: error.message });
+      handleSubmit: async (values: RegisterFormValues, { props }) => {
+        setValues(values);
+        const isAuthenticated = await props.auth.register(values);
+        if (isAuthenticated) {
+          history.replace(from);
         }
       },
     })(RegisterForm)

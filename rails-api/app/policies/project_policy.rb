@@ -8,7 +8,7 @@ class ProjectPolicy < ApplicationPolicy
   end
 
   def create?
-    user.client?
+    !user.staff?
   end
 
   def update?

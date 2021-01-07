@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe User, type: :model do
   it do
-    is_expected.to define_enum_for(:role).with_values(
+    expect(subject).to define_enum_for(:role).with_values(
       client: 0, staff: 1, admin: 2
     )
   end
@@ -11,12 +11,12 @@ RSpec.describe User, type: :model do
     it { is_expected.to have_one_attached(:avatar) }
 
     it do
-      is_expected.to have_many(:projects).class_name('Project')
-        .with_foreign_key('created_by').dependent(:destroy)
+      expect(subject).to have_many(:projects).class_name('Project')
+                                             .with_foreign_key('created_by').dependent(:destroy)
     end
 
     it do
-      is_expected.to have_many(:tasks).class_name('Task').with_foreign_key(
+      expect(subject).to have_many(:tasks).class_name('Task').with_foreign_key(
         'assigned_to'
       ).dependent(:destroy)
     end
@@ -34,10 +34,10 @@ RSpec.describe User, type: :model do
       it 'finds users by email or first_name or last_name' do
         query = Faker::Lorem.word
         expect(described_class.by_query(query).to_sql).to eq described_class
-             .where(
-             'lower(email) ILIKE :query OR lower(first_name) ILIKE :query OR lower(last_name) ILIKE :query',
-             query: "%#{query}%"
-           ).to_sql
+          .where(
+            'lower(email) ILIKE :query OR lower(first_name) ILIKE :query OR lower(last_name) ILIKE :query',
+            query: "%#{query}%"
+          ).to_sql
       end
     end
 
@@ -45,14 +45,14 @@ RSpec.describe User, type: :model do
       it 'finds users by role' do
         role = 'admin'
         expect(described_class.by_role(role).to_sql).to eq described_class
-             .where(role: role).to_sql
+          .where(role: role).to_sql
       end
     end
   end
 
   describe 'avatar' do
     it do
-      is_expected.to validate_content_type_of(:avatar).allowing(
+      expect(subject).to validate_content_type_of(:avatar).allowing(
         'image/png',
         'image/jpeg'
       )

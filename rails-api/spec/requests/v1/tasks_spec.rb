@@ -85,10 +85,9 @@ RSpec.describe '/v1/tasks', type: :request do
     context 'with sort parameters' do
       before do
         get project_tasks_url(
-              project_id: project.id,
-              by_sort: { column: 'summary', direction: 'desc' }
-            ),
-            headers: valid_headers, as: :json
+          project_id: project.id,
+          by_sort: { column: 'summary', direction: 'desc' }
+        ), headers: valid_headers, as: :json
       end
 
       it 'returns 200' do
@@ -123,9 +122,7 @@ RSpec.describe '/v1/tasks', type: :request do
       end
 
       it 'returns a task' do
-        expect(json).to include_json(
-          summary: task.summary, description: task.description
-        )
+        expect(response.body).to eq(ActiveModelSerializers::SerializableResource.new(task).to_json)
       end
     end
 
@@ -208,6 +205,47 @@ RSpec.describe '/v1/tasks', type: :request do
     it 'returns 204' do
       delete task_url(task), headers: valid_headers, as: :json
       expect(response).to have_http_status(:no_content)
+    end
+  end
+
+  describe 'POST /projects/:project_id/tasks/import' do
+    context 'with valid parameters' do
+      let(:valid_attributes) do
+        {
+          uuid: Faker::Number.number(digits: 10),
+          file: FilesTestHelper.csv
+        }
+      end
+
+      it 'creates new import' do
+        expect do
+          post import_project_tasks_url(project),
+               params: valid_attributes, headers: valid_headers
+        end.to change(Import, :count).by(1)
+      end
+
+      it 'returns 201' do
+        post import_project_tasks_url(project),
+             params: valid_attributes, headers: valid_headers
+        expect(response).to have_http_status(:created)
+      end
+    end
+
+    context 'with invalid parameters' do
+      let(:invalid_attributes) { { uuid: nil } }
+
+      it 'does not create a new Import' do
+        expect do
+          post import_project_tasks_url(project), params: { task: invalid_attributes }
+        end.to change(Import, :count).by(0)
+      end
+
+      it 'returns 422 with an error message', :aggregate_failures do
+        post import_project_tasks_url(project),
+             params: invalid_attributes, headers: valid_headers
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(json).to include_json('uuid': ["can't be blank"])
+      end
     end
   end
 end

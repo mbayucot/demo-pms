@@ -14,3 +14,11 @@ $font-family-sans-serif: Inter var, -apple-system, BlinkMacSystemFont, Segoe UI,
   transform: translate(-50%, -50%);
   text-align: center;
 }
+
+.no-caret {
+  .dropdown-toggle:after { content: none !important; }
+}
+
+.font-weight-medium {
+  font-weight: 500 !important;
+}

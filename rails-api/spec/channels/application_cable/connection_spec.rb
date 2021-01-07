@@ -7,7 +7,7 @@ RSpec.describe ApplicationCable::Connection, type: :channel do
   let(:valid_headers) { Devise::JWT::TestHelpers.auth_headers({}, user) }
 
   it 'successfully connects' do
-    connect "/cable?uuid=#{Faker::Number.number(digits: 10)}",
+    connect "/cable?token=#{valid_headers['Authorization']}",
             headers: valid_headers
     expect(connection.current_user.id).to eq user.id
   end

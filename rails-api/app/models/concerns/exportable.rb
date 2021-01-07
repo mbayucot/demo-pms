@@ -5,7 +5,7 @@ module Exportable
   include Exceptions
 
   class_methods do
-    def to_csv
+    def to_csv(query)
       unless const_defined?('CSV_EXPORT')
         raise Exceptions::MissingRequirement,
               "Missing constant in #{self}: CSV_EXPORT"
@@ -14,7 +14,7 @@ module Exportable
       CSV.generate(headers: true) do |csv|
         csv << self::CSV_EXPORT
 
-        find_each do |resource|
+        find_by_sql(query).each do |resource|
           csv << self::CSV_EXPORT.map { |attr| resource.send(attr) }
         end
       end

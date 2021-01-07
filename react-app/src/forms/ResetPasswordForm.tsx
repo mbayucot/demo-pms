@@ -1,50 +1,86 @@
-import React from "react";
-import Form from "react-bootstrap/Form";
 import { FormikProps } from "formik";
+import React from "react";
 import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
+import * as Yup from "yup";
+import Spinner from "react-bootstrap/Spinner";
 
-export type FormValues = {
-  email: string;
+export type ResetPasswordFormValues = {
+  new_password: string;
+  confirm_password: string;
 };
+export const validationSchema = Yup.object().shape({
+  new_password: Yup.string()
+    .required("New password is required")
+    .min(8, "New password is too short")
+    .max(20, "New password is too long"),
+  confirm_password: Yup.string()
+    .required("Confirm password is required")
+    .min(8, "Confirm password is too short")
+    .max(20, "Confirm password is too long")
+    .test("passwords-match", "Passwords must match", function (value) {
+      return this.parent.password === value;
+    }),
+});
 
-const ResetPasswordForm = (props: FormikProps<FormValues>) => {
+const ResetPasswordForm = (
+  props: FormikProps<ResetPasswordFormValues>
+): React.ReactElement => {
   const {
     values,
     handleChange,
     errors,
-    isValidating,
+
     isSubmitting,
     handleSubmit,
   } = props;
+
   return (
-    <Form noValidate onSubmit={handleSubmit} className="theme-form">
+    <Form noValidate onSubmit={handleSubmit}>
       <h4>Reset your password</h4>
-      <p>
-        Enter your user account's verified email address and we will send you a
-        password reset link.
-      </p>
-      <Form.Group controlId="email">
+      <Form.Group controlId="new_password">
+        <Form.Label>New Password</Form.Label>
         <Form.Control
-          type="text"
-          name="email"
+          type="password"
+          name="new_password"
+          value={values.new_password}
           autoFocus
-          placeholder={"Enter your email address"}
-          value={values.email}
           onChange={handleChange}
-          isInvalid={!!errors.email}
+          isInvalid={!!errors.new_password}
         />
         <Form.Control.Feedback type="invalid">
-          {errors.email}
+          {errors.new_password}
         </Form.Control.Feedback>
       </Form.Group>
-      <div className="text-center">
+      <Form.Group controlId="confirm_password">
+        <Form.Label>Confirm Password</Form.Label>
+        <Form.Control
+          type="password"
+          name="confirm_password"
+          value={values.confirm_password}
+          onChange={handleChange}
+          isInvalid={!!errors.confirm_password}
+        />
+        <Form.Control.Feedback type="invalid">
+          {errors.confirm_password}
+        </Form.Control.Feedback>
+      </Form.Group>
+      <div className="text-center mt-4">
         <Button
           type="submit"
-          size="lg"
-          className="btn-blue mt-4 btn-block"
-          disabled={!isValidating && isSubmitting}
+          className="btn-blue btn-block"
+          disabled={isSubmitting}
         >
-          Send password reset email
+          Save
+          {isSubmitting && (
+            <Spinner
+              as="span"
+              animation="border"
+              size="sm"
+              role="status"
+              aria-hidden="true"
+            />
+          )}
         </Button>
       </div>
     </Form>

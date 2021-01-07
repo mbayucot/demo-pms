@@ -2,7 +2,7 @@ import React, { FC } from "react";
 import { render, screen } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 
-import Layout from "../../private/Layout";
+import Layout from "../../auth/Layout";
 
 describe("Layout", () => {
   it("should wrap a class component", () => {

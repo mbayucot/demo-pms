@@ -7,18 +7,21 @@ RSpec.describe Import, type: :model do
     it { is_expected.to have_one_attached(:file) }
   end
 
-  describe 'validations' do
-    it { is_expected.to validate_presence_of(:uuid) }
-    it { is_expected.to validate_presence_of(:klass) }
+  describe 'callbacks' do
+    it 'runs import job' do
+      ActiveJob::Base.queue_adapter = :test
+      expect { create(:import) }.to have_enqueued_job(ImportJob)
+    end
   end
 
-  describe 'callbacks' do
-    describe '#after_create_commit' do
-      it 'runs import job' do
-        ActiveJob::Base.queue_adapter = :test
-        create(:import, file: FilesTestHelper.csv)
-        expect(ImportJob).to have_been_enqueued
-      end
+  describe 'validations' do
+    it { is_expected.to validate_presence_of(:klass) }
+    it { is_expected.to validate_presence_of(:uuid) }
+  end
+
+  describe 'file' do
+    it do
+      expect(subject).to validate_content_type_of(:file).allowing('text/csv')
     end
   end
 end

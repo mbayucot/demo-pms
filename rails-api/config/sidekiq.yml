@@ -1,2 +1,6 @@
 ---
 :concurrency: 5
+:schedule:
+  clean_import_job:
+    cron: '0 1 * * *'
+    class: CleanImportJob

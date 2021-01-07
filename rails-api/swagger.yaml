@@ -74,6 +74,9 @@ paths:
                     password:
                       description: password
                       type: string
+                    domain:
+                      description: domain
+                      type: string
       responses:
         "200":
           description: OK
@@ -156,6 +159,25 @@ paths:
         "422":
           description: Unprocessable Entity
 
+  /users/index:
+    get:
+      tags:
+        - "v1/user"
+      summary: Returns a list of users
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/queryParam'
+        - $ref: '#/components/parameters/roleParam'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedResult"
+      security:
+        - bearerAuth: [ ]
+
   /users/show:
     get:
       tags:
@@ -167,16 +189,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                  email:
-                    type: string
-                  first_name:
-                    type: string
-                  last_name:
-                    type: string
+                $ref: "#/definitions/Task"
   /users/update:
     patch:
       tags:
@@ -243,50 +256,17 @@ paths:
       tags:
         - "v1/project"
       summary: Returns a list of projects
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                page:
-                  type: integer
-                by_query:
-                  type: string
-                by_sort:
-                  type: object
-                  properties:
-                    column:
-                      type: string
-                    direction:
-                      type: string
-          text/csv:
-            schema:
-              type: object
-              properties:
-                page:
-                  type: integer
-                by_query:
-                  type: string
-                by_sort:
-                  type: object
-                  properties:
-                    column:
-                      type: string
-                    direction:
-                      type: string
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/queryParam'
+        - $ref: '#/components/parameters/sortParam'
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                  name:
-                    type: string
+                $ref: "#/components/schemas/PaginatedResult"
       security:
         - bearerAuth: []
     post:
@@ -314,22 +294,14 @@ paths:
         - "v1/project"
       summary: Finds a project by ID
       parameters:
-        - name: projectId
-          in: path
-          required: true
-          type: integer
+        - $ref: '#/components/parameters/projectIdParam'
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                  name:
-                    type: string
+                $ref: "#/definitions/Project"
         "404":
           description: Not Found
       security:
@@ -339,10 +311,7 @@ paths:
         - "v1/project"
       summary: Updates a project
       parameters:
-        - name: projectId
-          in: path
-          required: true
-          type: integer
+        - $ref: '#/components/parameters/projectIdParam'
       requestBody:
         content:
           application/json:
@@ -363,33 +332,10 @@ paths:
         - "v1/project"
       summary: Deletes a project
       parameters:
-        - name: projectId
-          in: path
-          required: true
-          type: integer
+        - $ref: '#/components/parameters/projectIdParam'
       responses:
         "204":
           description: No Content
-      security:
-        - bearerAuth: []
-  /projects/import:
-    post:
-      tags:
-        - "v1/project"
-      summary: Imports projects from csv
-      requestBody:
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                file:
-                  type: file
-      responses:
-        "200":
-          description: OK
-        "422":
-          description: Unprocessable Entity
       security:
         - bearerAuth: []
 
@@ -399,45 +345,17 @@ paths:
         - "v1/task"
       summary: Returns a list of tasks
       parameters:
-        - name: projectId
-          in: path
-          required: true
-          type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                page:
-                  type: integer
-                by_query:
-                  type: string
-                by_status:
-                  type: string
-                by_sort:
-                  type: object
-                  properties:
-                    column:
-                      type: string
-                    direction:
-                      type: string
+        - $ref: '#/components/parameters/projectIdParam'
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/queryParam'
+        - $ref: '#/components/parameters/sortParam'
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  entries:
-                    type: array
-                    items:
-                      type: object
-                  meta:
-                    type: array
-                    items:
-                      type: object
+                $ref: "#/components/schemas/PaginatedResult"
       security:
         - bearerAuth: []
     post:
@@ -445,10 +363,7 @@ paths:
         - "v1/task"
       summary: Creates a new task
       parameters:
-        - name: projectId
-          in: path
-          required: true
-          type: integer
+        - $ref: '#/components/parameters/projectIdParam'
       requestBody:
         content:
           application/json:
@@ -466,6 +381,26 @@ paths:
           description: Unprocessable Entity
       security:
         - bearerAuth: []
+  /projects/{projectId}/tasks/import:
+    post:
+      tags:
+        - "v1/task"
+      summary: Imports projects from csv
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: file
+      responses:
+        "200":
+          description: OK
+        "422":
+          description: Unprocessable Entity
+      security:
+        - bearerAuth: []
   /tasks/{taskId}:
     get:
       tags:
@@ -475,21 +410,15 @@ paths:
         - name: taskId
           in: path
           required: true
-          type: integer
+          schema:
+            type: integer
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                  summary:
-                    type: string
-                  description:
-                    type: string
+                $ref: "#/definitions/Task"
         "404":
           description: Not Found
       security:
@@ -502,7 +431,8 @@ paths:
         - name: taskId
           in: path
           required: true
-          type: integer
+          schema:
+            type: integer
       requestBody:
         content:
           application/json:
@@ -528,7 +458,8 @@ paths:
         - name: taskId
           in: path
           required: true
-          type: integer
+          schema:
+            type: integer
       responses:
         "204":
           description: No Content
@@ -540,41 +471,21 @@ paths:
       tags:
         - "admin/project"
       summary: Returns a list of projects
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                page:
-                  type: integer
-                by_query:
-                  type: string
-                by_created_by:
-                  type: integer
-                by_sort:
-                  type: object
-                  properties:
-                    column:
-                      type: string
-                    direction:
-                      type: string
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/queryParam'
+        - name: by_created_by
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/sortParam'
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  entries:
-                    type: array
-                    items:
-                      type: object
-                  meta:
-                    type: array
-                    items:
-                      type: object
+                $ref: "#/components/schemas/PaginatedResult"
       security:
         - bearerAuth: []
   /admin/projects/{projectId}:
@@ -583,22 +494,14 @@ paths:
         - "admin/project"
       summary: Finds a project by ID
       parameters:
-        - name: projectId
-          in: path
-          required: true
-          type: integer
+        - $ref: '#/components/parameters/projectIdParam'
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                  name:
-                    type: string
+                $ref: "#/definitions/Project"
         "404":
           description: Not Found
       security:
@@ -608,10 +511,7 @@ paths:
         - "admin/project"
       summary: Updates a project
       parameters:
-        - name: projectId
-          in: path
-          required: true
-          type: integer
+        - $ref: '#/components/parameters/projectIdParam'
       requestBody:
         content:
           application/json:
@@ -632,10 +532,7 @@ paths:
         - "admin/project"
       summary: Deletes a project
       parameters:
-        - name: projectId
-          in: path
-          required: true
-          type: integer
+        - $ref: '#/components/parameters/projectIdParam'
       responses:
         "204":
           description: No Content
@@ -648,45 +545,25 @@ paths:
         - "admin/task"
       summary: Returns a list of tasks
       parameters:
-        - name: projectId
-          in: path
-          required: true
-          type: integer
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                page:
-                  type: integer
-                by_query:
-                  type: string
-                by_status:
-                  type: string
-                by_sort:
-                  type: object
-                  properties:
-                    column:
-                      type: string
-                    direction:
-                      type: string
+        - $ref: '#/components/parameters/projectIdParam'
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/queryParam'
+        - name: by_status
+          in: query
+          schema:
+            $ref: "#/components/schemas/Status"
+        - name: by_assigned_to
+          in: query
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/sortParam'
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  entries:
-                    type: array
-                    items:
-                      type: object
-                  meta:
-                    type: array
-                    items:
-                      type: object
+                $ref: "#/components/schemas/PaginatedResult"
       security:
         - bearerAuth: []
     post:
@@ -694,10 +571,7 @@ paths:
         - "admin/task"
       summary: Creates a new task
       parameters:
-        - name: projectId
-          in: path
-          required: true
-          type: integer
+        - $ref: '#/components/parameters/projectIdParam'
       requestBody:
         content:
           application/json:
@@ -724,21 +598,15 @@ paths:
         - name: taskId
           in: path
           required: true
-          type: integer
+          schema:
+            type: integer
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                  summary:
-                    type: string
-                  description:
-                    type: string
+                $ref: "#/definitions/Task"
         "404":
           description: Not Found
       security:
@@ -751,7 +619,8 @@ paths:
         - name: taskId
           in: path
           required: true
-          type: integer
+          schema:
+            type: integer
       requestBody:
         content:
           application/json:
@@ -777,7 +646,8 @@ paths:
         - name: taskId
           in: path
           required: true
-          type: integer
+          schema:
+            type: integer
       responses:
         "204":
           description: No Content
@@ -789,41 +659,18 @@ paths:
       tags:
         - "admin/user"
       summary: Returns a list of users
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                page:
-                  type: integer
-                by_query:
-                  type: string
-                by_role:
-                  type: string
-                by_sort:
-                  type: object
-                  properties:
-                    column:
-                      type: string
-                    direction:
-                      type: string
+      parameters:
+        - $ref: '#/components/parameters/pageParam'
+        - $ref: '#/components/parameters/queryParam'
+        - $ref: '#/components/parameters/roleParam'
+        - $ref: '#/components/parameters/sortParam'
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  entries:
-                    type: array
-                    items:
-                      type: object
-                  meta:
-                    type: array
-                    items:
-                      type: object
+                $ref: "#/components/schemas/PaginatedResult"
       security:
         - bearerAuth: []
     post:
@@ -862,25 +709,15 @@ paths:
         - name: userId
           in: path
           required: true
-          type: integer
+          schema:
+            type: integer
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                  email:
-                    type: string
-                  first_name:
-                    type: string
-                  last_name:
-                    type: string
-                  role:
-                    $ref: "#/components/schemas/Role"
+                $ref: "#/definitions/User"
         "404":
           description: Not Found
       security:
@@ -893,7 +730,8 @@ paths:
         - name: userId
           in: path
           required: true
-          type: integer
+          schema:
+            type: integer
       requestBody:
         content:
           application/json:
@@ -925,21 +763,104 @@ paths:
         - name: userId
           in: path
           required: true
-          type: integer
+          schema:
+            type: integer
       responses:
         "204":
           description: No Content
       security:
         - bearerAuth: []
 
+definitions:
+  Project:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      client:
+        type: object
+        properties:
+          $ref: '#/definitions/User'
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time
+  Task:
+    type: object
+    properties:
+      id:
+        type: integer
+      summary:
+        type: string
+      description:
+        type: string
+      status:
+        type: string
+      status_fmt:
+        type: string
+      assignee:
+        type: object
+        properties:
+          $ref: '#/definitions/User'
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time
+  User:
+    type: object
+    properties:
+      id:
+        type: integer
+      email:
+        type: string
+        format: email
+      first_name:
+        type: string
+      last_name:
+        type: string
+      avatar:
+        type: string
+      full_name:
+        type: string
+      created_at:
+        type: string
+        format: date-time
+      updated_at:
+        type: string
+        format: date-time
+
 components:
   schemas:
+    PaginatedResult:
+      type: object
+      properties:
+        entries:
+          type: array
+        meta:
+          type: object
+          properties:
+            column:
+              type: string
+            direction:
+              type: string
     Role:
-      type: string
+      type: integer
       enum:
-        - client
-        - staff
-        - admin
+        - 0
+        - 1
+        - 2
+    Status:
+      type: integer
+      enum:
+        - 0
+        - 1
+        - 2
 
   securitySchemes:
     bearerAuth:
@@ -947,6 +868,40 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+
+  parameters:
+    projectIdParam:
+      name: projectId
+      in: query
+      required: true
+      schema:
+        type: integer
+    pageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+    queryParam:
+      name: by_query
+      in: query
+      schema:
+        type: string
+    roleParam:
+      name: by_role
+      in: query
+      schema:
+        $ref: "#/components/schemas/Role"
+    sortParam:
+      name: by_sort
+      in: query
+      schema:
+        type: object
+        properties:
+          column:
+            type: string
+          direction:
+            type: string
+
 
 security:
   - bearerAuth: []

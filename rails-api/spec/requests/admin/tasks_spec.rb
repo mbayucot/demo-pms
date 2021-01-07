@@ -4,10 +4,11 @@ require 'devise/jwt/test_helpers'
 RSpec.describe '/admin/tasks', type: :request do
   let(:user) { create(:user) }
   let(:admin) { create(:user, role: :admin) }
+  let(:staff) { create(:user, role: :staff) }
 
   let(:project) { create(:project, created_by: user.id) }
 
-  let!(:tasks) { create_list(:task, 15, project_id: project.id) }
+  let!(:tasks) { create_list(:task, 15, project_id: project.id, assigned_to: staff.id) }
   let(:task) { tasks.first }
 
   let(:valid_attributes) do
@@ -75,13 +76,34 @@ RSpec.describe '/admin/tasks', type: :request do
       end
 
       it 'returns a search result' do
-        expect(json['entries'].size).to eq(0)
+        expect(json['entries'].size).to eq(10)
       end
 
       it 'returns a pagination metadata' do
         expect(json['meta']).to include_json(
-          'current_page': 1, 'total_pages': 1, 'total_count': 0
+          'current_page': 1, 'total_pages': 2, 'total_count': 15
         )
+      end
+    end
+
+    context 'with assigned_to parameter' do
+      before do
+        get admin_project_tasks_url(project_id: project.id, by_assigned_to: staff.id),
+            headers: valid_headers, as: :json
+      end
+
+      it 'returns 200' do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'returns a search result' do
+        expect(json['entries'].size).to eq(10)
+      end
+
+      it 'returns a pagination metadata' do
+        expect(json['meta']).to include_json(
+                                  'current_page': 1, 'total_pages': 2, 'total_count': 15
+                                )
       end
     end
 
@@ -127,9 +149,7 @@ RSpec.describe '/admin/tasks', type: :request do
       end
 
       it 'returns a task' do
-        expect(json).to include_json(
-          summary: task.summary, description: task.description
-        )
+        expect(response.body).to eq(ActiveModelSerializers::SerializableResource.new(task).to_json)
       end
     end
 

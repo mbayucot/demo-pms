@@ -5,7 +5,7 @@ class Import < ApplicationRecord
 
   validates :klass, presence: true
   validates :uuid, presence: true
-  validates :file, content_type: 'text/csv'
+  validates :file, attached: true, content_type: 'text/csv'
 
   after_create_commit { |import| ImportJob.perform_later(import) }
 end

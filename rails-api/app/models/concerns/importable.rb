@@ -3,7 +3,7 @@ module Importable
   include Exceptions
 
   class_methods do
-    def import(file_path)
+    def import(file_path, params)
       unless const_defined?('CSV_IMPORT')
         raise Exceptions::MissingRequirement,
               "Missing constant in #{self}: CSV_IMPORT"
@@ -12,9 +12,9 @@ module Importable
       rows =
         SmarterCSV.process(
           file_path,
-          { file_encoding: 'binary', required_headers: self::CSV_IMPORT }
+          { file_encoding: 'binary' }
         )
-      rows.each { |row| create! row.to_hash }
+      rows.each { |row| create! row.to_hash.merge(JSON.parse(params)) }
     end
   end
 end

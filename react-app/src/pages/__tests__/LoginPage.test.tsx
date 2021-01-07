@@ -3,15 +3,16 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { BrowserRouter, Route, Switch } from "react-router-dom";
 import faker from "faker";
 import userEvent from "@testing-library/user-event";
-import MockAdapter from "axios-mock-adapter";
-import axios from "axios";
+import { cache } from "swr";
+import { rest } from "msw";
+import { setupServer } from "msw/node";
 
 import LoginPage from "../LoginPage";
-import AuthProvider from "../../contexts/auth/AuthProvider";
-
-const mockAdapter = new MockAdapter(axios);
+import { AuthProvider } from "../../contexts/auth";
+import { handlers } from "../../contexts/__mocks__/auth";
 
 const setup = () => {
+  const url = `/login`;
   const utils = render(
     <AuthProvider>
       <BrowserRouter>
@@ -37,6 +38,7 @@ const setup = () => {
     password: faker.internet.password(),
   };
   return {
+    url,
     submitButton,
     user,
     changeUsernameInput,
@@ -46,9 +48,16 @@ const setup = () => {
 };
 
 describe("LoginPage", () => {
+  const server = setupServer(...handlers);
+
+  beforeAll(() => server.listen());
+
   afterEach(() => {
-    mockAdapter.resetHandlers();
+    cache.clear();
+    server.resetHandlers();
   });
+
+  afterAll(() => server.close());
 
   it("should render page", () => {
     setup();
@@ -72,39 +81,29 @@ describe("LoginPage", () => {
     const { changeUsernameInput } = setup();
     await changeUsernameInput(" ");
     await waitFor(() => {
-      expect(screen.getByText(/Email is not valid/)).toBeDefined();
+      expect(screen.getByText(/Email is invalid/)).toBeDefined();
       expect(screen.getByText(/Password is required/)).toBeDefined();
     });
   });
 
-  it("should submit the form if valid and redirect to projects page", async () => {
+  it("should submit the form if valid and redirect to tasks page", async () => {
     const {
       submitButton,
       user,
       changeUsernameInput,
       changePasswordInput,
       clickSubmit,
+      url,
     } = setup();
     await changeUsernameInput(user.email);
     await changePasswordInput(user.password);
     clickSubmit();
 
-    mockAdapter.onPost("/login").reply(
-      200,
-      {
-        email: user.email,
-      },
-      {
-        authorization: "__token__",
-      }
-    );
-
     await waitFor(() => {
-      expect(submitButton).toHaveTextContent("Signing in..");
       expect(submitButton).toBeDisabled();
     });
 
-    expect(screen.getByText("projects page")).toBeInTheDocument();
+    expect(await screen.findByText("projects page")).toBeInTheDocument();
   });
 
   it("should show error messages if form is invalid", async () => {
@@ -113,14 +112,22 @@ describe("LoginPage", () => {
       changeUsernameInput,
       changePasswordInput,
       clickSubmit,
+      url,
     } = setup();
     await changeUsernameInput(user.email);
     await changePasswordInput(user.password);
     clickSubmit();
 
-    mockAdapter.onPost("/login").reply(422, {
-      error: "Login failed",
-    });
+    server.use(
+      rest.post(url, (req, res, ctx) => {
+        return res.once(
+          ctx.status(422),
+          ctx.json({
+            error: "Login failed",
+          })
+        );
+      })
+    );
 
     await waitFor(() => {
       expect(screen.getByText("Login failed")).toBeInTheDocument();

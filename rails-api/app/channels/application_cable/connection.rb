@@ -9,7 +9,7 @@ module ApplicationCable
     private
 
     def find_verified_user
-      authorization = request.headers['Authorization']
+      authorization = request.params[:token]
       reject_unauthorized_connection unless authorization
 
       token = authorization&.gsub(/^Bearer /, '')

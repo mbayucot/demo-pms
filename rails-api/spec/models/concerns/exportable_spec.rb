@@ -11,7 +11,7 @@ RSpec.describe Exportable do
   let!(:projects) { create_list(:project, 2) }
 
   context 'with valid class' do
-    subject(:rows) { CSV.parse(ExportableClass.all.to_csv) }
+    subject(:rows) { CSV.parse(ExportableClass.to_csv(ExportableClass.all.to_sql)) }
 
     before { stub_const('ExportableClass::CSV_EXPORT', %w[name].freeze) }
 
@@ -31,7 +31,7 @@ RSpec.describe Exportable do
 
   context 'with invalid class' do
     it 'raises an error' do
-      expect { ExportableClass.all.to_csv }.to raise_error(
+      expect { ExportableClass.to_csv(ExportableClass.all.to_sql) }.to raise_error(
         Exceptions::MissingRequirement,
         'Missing constant in ExportableClass: CSV_EXPORT'
       )

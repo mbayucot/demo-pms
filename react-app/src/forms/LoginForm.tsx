@@ -3,24 +3,44 @@ import React from "react";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import { NavLink } from "react-router-dom";
+import * as Yup from "yup";
+import Spinner from "react-bootstrap/Spinner";
+import Alert from "react-bootstrap/Alert";
 
-export type FormValues = {
-  email: string;
-  password: string;
-};
+import { useAuth } from "../contexts/auth";
+import { User } from "../types";
 
-const LoginForm = (props: FormikProps<FormValues>): React.ReactElement => {
+export type LoginFormValues = Pick<User, "email" | "password">;
+
+interface OtherProps {
+  isAdmin?: boolean;
+}
+
+export const validationSchema = Yup.object().shape({
+  email: Yup.string().email("Email is invalid").required("Email is required"),
+  password: Yup.string()
+    .min(8, "Password is too short")
+    .max(20, "Password is too long")
+    .required("Password is required"),
+});
+
+const LoginForm = (
+  props: OtherProps & FormikProps<LoginFormValues>
+): React.ReactElement => {
+  const { error } = useAuth();
   const {
     values,
     handleChange,
     errors,
-    isValidating,
     isSubmitting,
     handleSubmit,
+    isAdmin,
   } = props;
+
   return (
     <Form noValidate onSubmit={handleSubmit} className="theme-form">
       <h4 className="mb-4">Sign in to account</h4>
+      {error && <Alert variant="danger">{error}</Alert>}
       <Form.Group controlId="email">
         <Form.Label>Email Address</Form.Label>
         <Form.Control
@@ -57,17 +77,29 @@ const LoginForm = (props: FormikProps<FormValues>): React.ReactElement => {
         <Button
           type="submit"
           className="btn-blue btn-block"
-          disabled={!isValidating && isSubmitting}
+          disabled={isSubmitting}
         >
-          {isSubmitting ? "Signing in.." : "Sign In"}
+          Sign In
+          {isSubmitting && (
+            <Spinner
+              as="span"
+              animation="border"
+              size="sm"
+              role="status"
+              aria-hidden="true"
+              className="ml-2"
+            />
+          )}
         </Button>
       </div>
-      <p className="mt-4 mb-0">
-        Don't have account?
-        <NavLink to="/signup" className="ml-2">
-          Create Account
-        </NavLink>
-      </p>
+      {!isAdmin && (
+        <p className="mt-4 mb-0">
+          Don't have account?
+          <NavLink to="/signup" className="ml-2">
+            Create Account
+          </NavLink>
+        </p>
+      )}
     </Form>
   );
 };

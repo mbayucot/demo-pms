@@ -20,7 +20,9 @@ module.exports = {
     "plugin:jest-formatting/recommended",
     "plugin:jsdoc/recommended",
   ],
-  rules: {},
+  rules: {
+    "jest/no-mocks-import": 0,
+  },
   plugins: [
     "testing-library",
     "jest-dom",

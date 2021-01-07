@@ -40,6 +40,17 @@ class V1::TasksController < ApplicationController
     @task.destroy
   end
 
+  # POST /v1/projects/:project_id/tasks/import
+  def import
+    @user = current_user
+    @import =
+      authorize @user.imports.create!(import_params.merge(klass: Task.to_s, params: {
+        project_id: params[:project_id]
+      }.to_json))
+
+    render json: @import, status: :created
+  end
+
   private
 
   def set_project
@@ -54,5 +65,9 @@ class V1::TasksController < ApplicationController
 
   def task_params
     params.fetch(:task, {}).permit(:summary, :description, :status)
+  end
+
+  def import_params
+    params.permit(:uuid, :file)
   end
 end

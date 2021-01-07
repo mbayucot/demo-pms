@@ -2,12 +2,13 @@ Rails.application.routes.draw do
   defaults format: :json do
     scope module: :v1 do
       resources :projects do
-        collection { post :import }
-
-        resources :tasks, shallow: true
+        resources :tasks, shallow: true do
+          collection { post :import }
+        end
       end
 
       namespace :users do
+        get :index
         get :show
         patch :update
         patch :update_password
@@ -16,7 +17,7 @@ Rails.application.routes.draw do
     end
 
     namespace :admin do
-      resources :projects, except: :create do
+      resources :projects do
         resources :tasks, shallow: true
       end
 

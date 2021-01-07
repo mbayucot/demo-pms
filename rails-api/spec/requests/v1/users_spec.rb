@@ -4,11 +4,73 @@ require 'devise/jwt/test_helpers'
 RSpec.describe '/v1/users', type: :request do
   let(:password) { Faker::Internet.password }
   let(:user) do
-    create(:user, password: password, password_confirmation: password)
+    create(:user, password: password, password_confirmation: password, role: :client)
   end
+  let!(:users) { create_list(:user, 15, role: :staff) }
 
   let(:valid_headers) do
     Devise::JWT::TestHelpers.auth_headers({ Accept: 'application/json' }, user)
+  end
+
+  describe 'GET /index' do
+    context 'with no parameter' do
+      before { get users_index_url, headers: valid_headers, as: :json }
+
+      it 'returns 200' do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'returns a paginated result' do
+        expect(json['entries'].size).to eq(10)
+      end
+
+      it 'returns a pagination metadata' do
+        expect(json['meta']).to include_json(
+          'current_page': 1, 'total_pages': 2, 'total_count': 16
+        )
+      end
+    end
+
+    context 'with search parameter' do
+      before do
+        get users_index_url(by_query: user.first_name),
+            headers: valid_headers, as: :json
+      end
+
+      it 'returns 200' do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'returns a search result' do
+        expect(json['entries'].size).to eq(1)
+      end
+
+      it 'returns a pagination metadata' do
+        expect(json['meta']).to include_json(
+          'current_page': 1, 'total_pages': 1, 'total_count': 1
+        )
+      end
+    end
+
+    context 'with role parameter' do
+      before do
+        get users_index_url(by_role: 1), headers: valid_headers, as: :json
+      end
+
+      it 'returns 200' do
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'returns a search result' do
+        expect(json['entries'].size).to eq(10)
+      end
+
+      it 'returns a pagination metadata' do
+        expect(json['meta']).to include_json(
+          'current_page': 1, 'total_pages': 2, 'total_count': 15
+        )
+      end
+    end
   end
 
   describe 'GET /show' do
@@ -19,7 +81,7 @@ RSpec.describe '/v1/users', type: :request do
     end
 
     it 'returns a user' do
-      expect(json).to include_json(first_name: user.first_name)
+      expect(response.body).to eq(ActiveModelSerializers::SerializableResource.new(user).to_json)
     end
   end
 
@@ -128,8 +190,8 @@ RSpec.describe '/v1/users', type: :request do
     it 'destroys the attached avatar', :aggregate_failures do
       delete users_destroy_avatar_url, headers: valid_headers, as: :json
       user.reload
-      expect(user.avatar.attached?).to be_falsey
-      expect(response).to have_http_status(:no_content)
+      expect(user.avatar).not_to be_attached
+      expect(response).to have_http_status(:ok)
     end
   end
 end

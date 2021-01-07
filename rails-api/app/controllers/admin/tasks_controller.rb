@@ -3,7 +3,8 @@ class Admin::TasksController < ApplicationController
   before_action :set_task, only: %i[show update destroy]
 
   has_scope :by_query
-  has_scope :by_status
+  has_scope :by_status, type: :array
+  has_scope :by_assigned_to, type: :array
   has_scope :by_sort, using: %i[column direction], type: :hash
 
   # GET /admin/projects/:project_id/tasks

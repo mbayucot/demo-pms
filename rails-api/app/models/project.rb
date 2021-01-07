@@ -3,8 +3,7 @@ class Project < ApplicationRecord
   include Exportable
   include Sortable
 
-  CSV_IMPORT = %w[name].freeze
-  CSV_EXPORT = %w[name].freeze
+  CSV_EXPORT = %w[id name created_at updated_at].freeze
 
   belongs_to :user, class_name: 'User', foreign_key: 'created_by'
 

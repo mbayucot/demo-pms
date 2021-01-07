@@ -1,6 +1,4 @@
 class V1::ProjectsController < ApplicationController
-  include ActionController::MimeResponds
-
   before_action :set_project, only: %i[show update destroy]
 
   has_scope :by_query
@@ -10,26 +8,12 @@ class V1::ProjectsController < ApplicationController
   def index
     @projects = authorize policy_scope(Project)
     @projects = apply_scopes(@projects)
+    @projects = @projects.paginate(page: params[:page])
 
-    respond_to do |format|
-      @projects = @projects.paginate(page: params[:page])
-
-      format.json do
-        render json: @projects,
-               meta: pagination_dict(@projects),
-               adapter: :json,
-               root: 'entries'
-      end
-      format.csv do
-        if params[:uuid].present?
-          export = Export.new(params[:uuid], Project.to_s, @projects.to_sql)
-          ExportJob.perform_later(export)
-          head :accepted
-        else
-          head :bad_request
-        end
-      end
-    end
+    render json: @projects,
+           meta: pagination_dict(@projects),
+           adapter: :json,
+           root: 'entries'
   end
 
   # GET /v1/projects/1
@@ -54,15 +38,6 @@ class V1::ProjectsController < ApplicationController
   # DELETE /v1/projects/1
   def destroy
     @project.destroy
-  end
-
-  # POST /v1/projects/import
-  def import
-    @user = current_user
-    @import =
-      authorize @user.imports.create!(import_params.merge(klass: Project.to_s))
-
-    render json: @import, status: :created
   end
 
   private

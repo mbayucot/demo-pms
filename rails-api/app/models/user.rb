@@ -23,6 +23,14 @@ class User < ApplicationRecord
         }
   scope :by_role, ->(role) { where(role: role) }
 
+  def self.find_for_database_authentication(warden_conditions)
+    conditions = warden_conditions.dup
+    domain = conditions.delete(:domain)
+    where(conditions.to_h).where(
+      role: domain == 'client' ? 'client' : %w[admin staff]
+    ).first
+  end
+
   devise :database_authenticatable,
          :registerable,
          :recoverable,
@@ -30,5 +38,6 @@ class User < ApplicationRecord
          :validatable,
          :confirmable,
          :jwt_authenticatable,
-         jwt_revocation_strategy: JwtDenylist
+         jwt_revocation_strategy: JwtDenylist,
+         authentication_keys: %i[email domain]
 end

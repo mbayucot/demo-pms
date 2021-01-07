@@ -8,8 +8,8 @@ RSpec.describe '/admin/projects', type: :request do
   let!(:projects) { create_list(:project, 15, created_by: user.id) }
   let(:project) { projects.first }
 
-  let(:valid_attributes) { { name: Faker::Lorem.word } }
-  let(:invalid_attributes) { { name: nil } }
+  let(:valid_attributes) { { name: Faker::Lorem.word, created_by: user.id } }
+  let(:invalid_attributes) { { name: nil, created_by: nil } }
 
   let(:valid_headers) do
     Devise::JWT::TestHelpers.auth_headers({ Accept: 'application/json' }, admin)
@@ -98,6 +98,19 @@ RSpec.describe '/admin/projects', type: :request do
     end
   end
 
+  describe 'GET /index.csv' do
+    it 'with valid parameters' do
+      get admin_projects_url(uuid: Faker::Number.number(digits: 10), format: :csv),
+          headers: valid_headers
+      expect(response).to have_http_status(:accepted)
+    end
+
+    it 'with invalid parameters' do
+      get admin_projects_url(uuid: nil, format: :csv), headers: valid_headers
+      expect(response).to have_http_status(:bad_request)
+    end
+  end
+
   describe 'GET /show' do
     context 'with valid parameters' do
       before do
@@ -109,7 +122,7 @@ RSpec.describe '/admin/projects', type: :request do
       end
 
       it 'returns a project' do
-        expect(json).to include_json(name: project.name)
+        expect(response.body).to eq(ActiveModelSerializers::SerializableResource.new(project).to_json)
       end
     end
 
@@ -117,6 +130,39 @@ RSpec.describe '/admin/projects', type: :request do
       it 'returns 404' do
         get admin_project_url(id: 0), headers: valid_headers, as: :json
         expect(response).to have_http_status(:not_found)
+      end
+    end
+  end
+
+  describe 'POST /create' do
+    context 'with valid parameters' do
+      it 'creates a new Project' do
+        expect do
+          post admin_projects_url,
+               params: valid_attributes, headers: valid_headers, as: :json
+        end.to change(Project, :count).by(1)
+      end
+
+      it 'returns 201' do
+        post admin_projects_url,
+             params: valid_attributes, headers: valid_headers, as: :json
+        expect(response).to have_http_status(:created)
+      end
+    end
+
+    context 'with invalid parameters' do
+      it 'does not create a new Project' do
+        expect do
+          post admin_projects_url,
+               params: invalid_attributes, headers: valid_headers, as: :json
+        end.to change(Project, :count).by(0)
+      end
+
+      it 'returns 422 with an error message', :aggregate_failures do
+        post admin_projects_url,
+             params: invalid_attributes, headers: valid_headers, as: :json
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(json).to include_json('name': ["can't be blank"])
       end
     end
   end

@@ -3,24 +3,33 @@ import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import { FormikProps } from "formik";
 import { NavLink } from "react-router-dom";
+import * as Yup from "yup";
+import Spinner from "react-bootstrap/Spinner";
+import { useAuth } from "../contexts/auth";
+import Alert from "react-bootstrap/Alert";
 
-export type FormValues = {
-  email: string;
-  password: string;
-};
+import { User } from "../types";
 
-const RegisterForm = (props: FormikProps<FormValues>): React.ReactElement => {
-  const {
-    values,
-    handleChange,
-    errors,
-    isValidating,
-    isSubmitting,
-    handleSubmit,
-  } = props;
+export type RegisterFormValues = Pick<User, "email" | "password">;
+
+export const validationSchema = Yup.object().shape({
+  email: Yup.string().email("Email is invalid").required("Email is required"),
+  password: Yup.string()
+    .min(8, "Password is too short")
+    .max(20, "Password is too long")
+    .required("Password is required"),
+});
+
+const RegisterForm = (
+  props: FormikProps<RegisterFormValues>
+): React.ReactElement => {
+  const { error } = useAuth();
+  const { values, handleChange, errors, isSubmitting, handleSubmit } = props;
+
   return (
     <Form noValidate onSubmit={handleSubmit} className="theme-form">
       <h4 className="mb-4">{"Create your account"}</h4>
+      {error && <Alert variant="danger">{error}</Alert>}
       <Form.Group controlId="email">
         <Form.Label>Email Address</Form.Label>
         <Form.Control
@@ -52,9 +61,19 @@ const RegisterForm = (props: FormikProps<FormValues>): React.ReactElement => {
         <Button
           type="submit"
           className="btn-blue mt-4 btn-block"
-          disabled={!isValidating && isSubmitting}
+          disabled={isSubmitting}
         >
-          {isSubmitting ? "Creating account.." : "Create Account"}
+          Create Account
+          {isSubmitting && (
+            <Spinner
+              as="span"
+              animation="border"
+              size="sm"
+              role="status"
+              aria-hidden="true"
+              className="ml-2"
+            />
+          )}
         </Button>
       </div>
       <p className="mt-4 mb-0">

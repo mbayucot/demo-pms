@@ -1,7 +1,7 @@
 import React from "react";
 import { screen } from "@testing-library/react";
 
-import { renderWithRouter } from "../helpers/router";
+import { renderWithRouter } from "../utils/router";
 import App from "../../App";
 
 describe("PrivateRoute", () => {
