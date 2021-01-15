@@ -1,10 +1,9 @@
 import React from "react";
-// also exported from '@storybook/react' if you can deal with breaking changes in 6.1
 import { Story, Meta } from "@storybook/react/types-6-0";
 import faker from "faker";
 
 import GridTable, { GridTableProps } from "../components/grid-table";
-import { Project } from "../types/models";
+import { Project } from "../types";
 
 export default {
   title: "Example/GridTable",
@@ -27,6 +26,7 @@ Default.args = {
       accessor: "name",
     },
   ],
+  loading: false,
   data: {
     entries: Array.from(Array(10), (_, i) => ({
       id: i,

@@ -7,10 +7,10 @@ import reducer from "./reducer";
 import { AuthState, initialAuthState } from "./state";
 import { LoginFormValues } from "../../forms/LoginForm";
 import { RegisterFormValues } from "../../forms/RegisterForm";
-import { User } from "../../types/models";
+import { User } from "../../types";
 
 type Props = {
-  children?: React.ReactNode;
+  children: React.ReactNode;
 };
 
 const AuthProvider = ({ children }: Props): JSX.Element => {
@@ -25,69 +25,48 @@ const AuthProvider = ({ children }: Props): JSX.Element => {
       initial
   );
 
-  const handleUserResponse = useCallback((response: AxiosResponse): Promise<
-    boolean
-  > => {
+  const handleUserResponse = (response: AxiosResponse): Promise<boolean> => {
     const { data: user } = response;
     Cookies.set(tokenKey, response.headers.authorization, { expires: 1 });
     const state: AuthState = {
       isAuthenticated: true,
       user,
     };
+
     localStorage.setItem(storageKey, JSON.stringify(state));
-
     dispatch({ type: "LOGIN_COMPLETE", user });
-
     return Promise.resolve(true);
-  }, []);
+  };
 
-  const handleError = useCallback((error): Promise<boolean> => {
-    const { status, data } = error.response;
-    let errorMsg: string;
-    switch (status) {
-      case 401:
-        errorMsg = data;
-        break;
-      case 500:
-      case 503:
-        errorMsg = "Something went wrong!";
-        break;
-      default:
-        errorMsg = "Invalid email or password!";
-        break;
-    }
-    dispatch({ type: "ERROR", error: errorMsg });
-
+  const handleError = (): Promise<boolean> => {
+    dispatch({ type: "ERROR", error: "Invalid email or password." });
     return Promise.resolve(false);
-  }, []);
+  };
 
-  const register = useCallback(
-    async (values: RegisterFormValues): Promise<boolean> => {
-      dispatch({ type: "LOGIN_STARTED" });
+  const register = async (values: RegisterFormValues): Promise<boolean> => {
+    dispatch({ type: "LOGIN_STARTED" });
 
-      return axios
-        .post("/signup", {
-          user: { ...values },
-        })
-        .then(handleUserResponse)
-        .catch(handleError);
-    },
-    [handleUserResponse, handleError]
-  );
+    return axios
+      .post("/signup", {
+        user: { ...values },
+      })
+      .then(handleUserResponse)
+      .catch(handleError);
+  };
 
-  const login = useCallback(
-    async (values: LoginFormValues, domain = "client"): Promise<boolean> => {
-      dispatch({ type: "LOGIN_STARTED" });
+  const login = async (
+    values: LoginFormValues,
+    domain = "client"
+  ): Promise<boolean> => {
+    dispatch({ type: "LOGIN_STARTED" });
 
-      return axios
-        .post("/login", {
-          user: { ...values, ...{ domain: domain } },
-        })
-        .then(handleUserResponse)
-        .catch(handleError);
-    },
-    [handleUserResponse, handleError]
-  );
+    return axios
+      .post("/login", {
+        user: { ...values, ...{ domain: domain } },
+      })
+      .then(handleUserResponse)
+      .catch(handleError);
+  };
 
   const logout = useCallback(async (): Promise<void> => {
     axios
@@ -98,17 +77,18 @@ const AuthProvider = ({ children }: Props): JSX.Element => {
         dispatch({ type: "LOGOUT" });
       })
       .catch(handleError);
-  }, [handleError]);
+  }, []);
 
   const updateUser = useCallback(async (user: User): Promise<void> => {
     dispatch({ type: "USER_UPDATED", user: user });
   }, []);
 
+  const { isAuthenticated } = state;
   useEffect(() => {
     let mounted = true;
     if (mounted) {
       (async () => {
-        if (!Cookies.get(tokenKey) && state.isAuthenticated) {
+        if (!Cookies.get(tokenKey) && isAuthenticated) {
           await logout();
         }
       })();
@@ -116,7 +96,7 @@ const AuthProvider = ({ children }: Props): JSX.Element => {
     return () => {
       mounted = false;
     };
-  }, [state.isAuthenticated, logout]);
+  }, [isAuthenticated, tokenKey, logout]);
 
   return (
     <AuthContext.Provider

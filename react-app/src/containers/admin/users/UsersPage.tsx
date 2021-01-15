@@ -1,8 +1,8 @@
 import React, { FC, useCallback, useReducer, useMemo } from "react";
 import useSWR from "swr";
+import { Cell } from "react-table";
 import Button from "react-bootstrap/Button";
 import Select, { ValueType } from "react-select";
-import { Cell } from "react-table";
 
 import axios from "../../../lib/axios";
 import GridTable, {
@@ -15,13 +15,12 @@ import ModalManager, {
 } from "../../../lib/modal-manager";
 
 import SearchField from "../../../components/SearchField";
+import ConfirmModal from "../../../components/ConfirmModal";
 import NewUserModal from "./NewUserModal";
 import EditUserModal from "./EditUserModal";
-import ConfirmModal from "../../../components/ConfirmModal";
 import { enumKeys } from "../../../lib/utils";
 
-import { User, Role, SelectOptionType, Status } from "../../../types";
-
+import { SelectOptionType, User, Role } from "../../../types";
 
 const MODAL_COMPONENTS = {
   NEW_MODAL: NewUserModal,
@@ -41,35 +40,33 @@ const UsersPage: FC = () => {
 
   const { data, mutate } = useSWR(["admin/users", tableState]);
 
-  const onHide = useCallback(
+  const handleModalClose = useCallback(
     async (refresh?: boolean) => {
       if (refresh) {
         await mutate();
       }
-
       modalDispatch({ type: "HIDE_MODAL" });
     },
     [mutate]
   );
 
-  const handleDeleteConfirm = useCallback(
-    async (id: number, email: string) => {
-      axios.delete(`admin/users/${id}`).then((response) => {
-        onHide(true);
-      });
+  const handleConfirmedDelete = useCallback(
+    async (id: number) => {
+      await axios.delete(`admin/users/${id}`);
+      await handleModalClose(true);
     },
-    [onHide]
+    [handleModalClose]
   );
 
-  const handleCreate = useCallback(() => {
+  const handleCreate = () => {
     modalDispatch({
       type: "SHOW_MODAL",
       modalType: "NEW_MODAL",
       modalProps: {
-        onHide: onHide,
+        onHide: handleModalClose,
       },
     });
-  }, [onHide]);
+  };
 
   const handleEdit = useCallback(
     (id: number) => {
@@ -78,11 +75,11 @@ const UsersPage: FC = () => {
         modalType: "EDIT_MODAL",
         modalProps: {
           id,
-          onHide: onHide,
+          onHide: handleModalClose,
         },
       });
     },
-    [onHide]
+    [handleModalClose]
   );
 
   const handleDelete = useCallback(
@@ -91,34 +88,40 @@ const UsersPage: FC = () => {
         type: "SHOW_MODAL",
         modalType: "CONFIRM_MODAL",
         modalProps: {
-          message: "Are you sure you want to delete this user?",
-          onHide: onHide,
-          onConfirm: () => handleDeleteConfirm(id, email),
+          message: `Are you sure you want to delete <span class="font-weight-bold">${email}</span>?`,
+          onHide: async (isOk: boolean) => {
+            if (isOk) {
+              await handleConfirmedDelete(id);
+            } else {
+              modalDispatch({ type: "HIDE_MODAL" });
+            }
+          },
         },
       });
     },
-    [onHide, handleDeleteConfirm]
+    [handleConfirmedDelete]
   );
 
-  const handleSearch = useCallback(
-    (searchText: string) => {
-      tableDispatch({ type: "SET_QUERY", query: searchText });
-    },
-    [tableDispatch]
-  );
+  const handleSearch = useCallback((searchText: string) => {
+    tableDispatch({ type: "SET_QUERY", query: searchText });
+  }, []);
 
-  const handlePageChange = useCallback(
-    (pageIndex: number) => {
-      tableDispatch({ type: "SET_PAGE_INDEX", pageIndex });
-    },
-    [tableDispatch]
-  );
+  const handlePageChange = useCallback((pageIndex: number) => {
+    tableDispatch({ type: "SET_PAGE_INDEX", pageIndex });
+  }, []);
 
-  const handleSortChange = useCallback(
-    ({ column, direction }) => {
-      tableDispatch({ type: "SET_SORT", column, direction });
+  const handleSortChange = useCallback(({ column, direction }) => {
+    tableDispatch({ type: "SET_SORT", column, direction });
+  }, []);
+
+  const handleRoleChange = useCallback(
+    (selectedOption?: ValueType<SelectOptionType, false> | null) => {
+      tableDispatch({
+        type: "SET_ROLE",
+        role: selectedOption ? (selectedOption.value as Role) : "",
+      });
     },
-    [tableDispatch]
+    []
   );
 
   const columns = useMemo(
@@ -139,7 +142,7 @@ const UsersPage: FC = () => {
       },
       {
         Header: "Role",
-        accessor: "role",
+        accessor: "role_fmt",
         sortable: false,
       },
       {
@@ -173,7 +176,7 @@ const UsersPage: FC = () => {
   );
 
   return (
-    <div>
+    <>
       <div className="d-flex justify-content-between">
         <h4>Users</h4>
 
@@ -206,14 +209,7 @@ const UsersPage: FC = () => {
                 width: 250,
               }),
             }}
-            onChange={(
-              selectedOption?: ValueType<SelectOptionType, false> | null
-            ) => {
-              tableDispatch({
-                type: "SET_ROLE",
-                role: selectedOption ? (selectedOption.value as Role) : "",
-              });
-            }}
+            onChange={handleRoleChange}
           />
         </div>
       </div>
@@ -222,12 +218,12 @@ const UsersPage: FC = () => {
         columns={columns}
         loading={!data}
         data={data}
-        setPageIndex={handlePageChange}
-        setSort={handleSortChange}
+        onPageChange={handlePageChange}
+        onSort={handleSortChange}
       />
 
       <ModalManager components={MODAL_COMPONENTS} {...modalState} />
-    </div>
+    </>
   );
 };
 

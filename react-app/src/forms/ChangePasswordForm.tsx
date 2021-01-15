@@ -1,25 +1,30 @@
-import { FormikProps } from "formik";
 import React from "react";
-import Button from "react-bootstrap/Button";
-import Form from "react-bootstrap/Form";
-import Col from "react-bootstrap/Col";
+import { FormikProps } from "formik";
 import * as Yup from "yup";
+import Button from "react-bootstrap/Button";
+import Col from "react-bootstrap/Col";
+import Form from "react-bootstrap/Form";
 import Spinner from "react-bootstrap/Spinner";
 
 export type ChangePasswordFormValues = {
+  current_password: string;
   new_password: string;
   confirm_password: string;
 };
 
 export const validationSchema = Yup.object().shape({
+  current_password: Yup.string()
+    .min(8, "Old password is too short")
+    .max(20, "Old password is too long")
+    .required("Old password is required"),
   new_password: Yup.string()
     .min(8, "New password is too short")
     .max(20, "New password is too long")
     .required("New password is required"),
   confirm_password: Yup.string()
-    .min(8, "Confirm password is too short")
-    .max(20, "Confirm password is too long")
-    .required("Confirm password is required")
+    .min(8, "Confirm new password is too short")
+    .max(20, "Confirm new password is too long")
+    .required("Confirm new password is required")
     .test("passwords-match", "Passwords must match", function (value) {
       return this.parent.new_password === value;
     }),
@@ -34,6 +39,20 @@ const ChangePasswordForm = (
     <Form noValidate onSubmit={handleSubmit}>
       <Form.Row>
         <Col md={4}>
+          <Form.Group controlId="current_password">
+            <Form.Label className="font-weight-medium">Old password</Form.Label>
+            <Form.Control
+              type="password"
+              name="current_password"
+              value={values.current_password}
+              onChange={handleChange}
+              isInvalid={!!errors.current_password}
+              autoFocus
+            />
+            <Form.Control.Feedback type="invalid">
+              {errors.current_password}
+            </Form.Control.Feedback>
+          </Form.Group>
           <Form.Group controlId="new_password">
             <Form.Label className="font-weight-medium">New password</Form.Label>
             <Form.Control
@@ -55,7 +74,6 @@ const ChangePasswordForm = (
               type="password"
               name="confirm_password"
               value={values.confirm_password}
-              autoFocus
               onChange={handleChange}
               isInvalid={!!errors.confirm_password}
             />

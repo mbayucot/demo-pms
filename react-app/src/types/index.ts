@@ -16,13 +16,16 @@ interface Model {
   readonly updated_at?: Date;
 }
 
+type ValueOf<T> = T[keyof T];
+
 export interface User extends Model {
   email: string;
-  role: Role;
+  role: keyof typeof Role | "";
+  role_fmt?: ValueOf<Role>;
   password?: string;
   first_name?: string;
   last_name?: string;
-  full_name?: string;
+  readonly full_name?: string;
   avatar?: string;
 }
 
@@ -35,8 +38,10 @@ export interface Project extends Model {
 export interface Task extends Model {
   summary: string;
   description: string;
-  status: Status;
+  status: Status | "";
   readonly status_fmt: typeof Status;
   assigned_to?: number | "";
   readonly assignee?: User;
 }
+
+export type SelectOptionType = { label: string; value: string | number };

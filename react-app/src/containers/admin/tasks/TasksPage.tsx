@@ -1,10 +1,10 @@
 import React, { FC, useCallback, useReducer, useMemo } from "react";
-import useSWR from "swr";
-import Button from "react-bootstrap/Button";
 import { useParams } from "react-router-dom";
+import useSWR from "swr";
+import { Cell } from "react-table";
+import Button from "react-bootstrap/Button";
 import AsyncSelect from "react-select/async";
 import Select, { ValueType } from "react-select";
-import { Cell } from "react-table";
 
 import axios from "../../../lib/axios";
 import GridTable, {
@@ -17,13 +17,13 @@ import ModalManager, {
 } from "../../../lib/modal-manager";
 
 import SearchField from "../../../components/SearchField";
+import ConfirmModal from "../../../components/ConfirmModal";
 import NewTaskModal from "./NewTaskModal";
 import EditTaskModal from "./EditTaskModal";
-import ConfirmModal from "../../../components/ConfirmModal";
 
 import { searchUsersByRole } from "../../../api/user";
-import { SelectOptionType } from "../../../types";
-import { Status, Task } from "../../../types/models";
+import { SelectOptionType, Status, Task } from "../../../types";
+
 import { enumKeys } from "../../../lib/utils";
 
 const MODAL_COMPONENTS = {
@@ -32,12 +32,10 @@ const MODAL_COMPONENTS = {
   CONFIRM_MODAL: ConfirmModal,
 };
 
-type stateType = {
-  projectId: string;
-};
-
 const TasksPage: FC = () => {
-  const { projectId } = useParams<stateType>();
+  const { projectId } = useParams<{
+    projectId: string;
+  }>();
   const [modalState, modalDispatch] = useReducer(
     modalReducer,
     initialModalState
@@ -52,24 +50,22 @@ const TasksPage: FC = () => {
     tableState,
   ]);
 
-  const onHide = useCallback(
+  const handleModalClose = useCallback(
     async (refresh?: boolean) => {
       if (refresh) {
         await mutate();
       }
-
       modalDispatch({ type: "HIDE_MODAL" });
     },
     [mutate]
   );
 
-  const handleDeleteConfirm = useCallback(
-    async (id: number, summary: string) => {
-      axios.delete(`admin/tasks/${id}`).then(() => {
-        onHide(true);
-      });
+  const handleConfirmedDelete = useCallback(
+    async (id: number) => {
+      await axios.delete(`admin/tasks/${id}`);
+      await handleModalClose(true);
     },
-    [onHide]
+    [handleModalClose]
   );
 
   const handleCreate = useCallback(() => {
@@ -77,10 +73,11 @@ const TasksPage: FC = () => {
       type: "SHOW_MODAL",
       modalType: "NEW_MODAL",
       modalProps: {
-        onHide: onHide,
+        projectId,
+        onHide: handleModalClose,
       },
     });
-  }, [onHide]);
+  }, [projectId, handleModalClose]);
 
   const handleEdit = useCallback(
     (id: number) => {
@@ -89,11 +86,11 @@ const TasksPage: FC = () => {
         modalType: "EDIT_MODAL",
         modalProps: {
           id,
-          onHide: onHide,
+          onHide: handleModalClose,
         },
       });
     },
-    [onHide]
+    [handleModalClose]
   );
 
   const handleDelete = useCallback(
@@ -102,34 +99,50 @@ const TasksPage: FC = () => {
         type: "SHOW_MODAL",
         modalType: "CONFIRM_MODAL",
         modalProps: {
-          message: "Are you sure you want to delete this task?",
-          onHide: onHide,
-          onConfirm: () => handleDeleteConfirm(id, summary),
+          message: `Are you sure you want to delete <span class="font-weight-bold">${summary}?</span>`,
+          onHide: async (isOk: boolean) => {
+            if (isOk) {
+              await handleConfirmedDelete(id);
+            } else {
+              modalDispatch({ type: "HIDE_MODAL" });
+            }
+          },
         },
       });
     },
-    [onHide, handleDeleteConfirm]
+    [handleConfirmedDelete]
   );
 
-  const handlePageChange = useCallback(
-    (pageIndex: number) => {
-      tableDispatch({ type: "SET_PAGE_INDEX", pageIndex });
+  const handlePageChange = useCallback((pageIndex: number) => {
+    tableDispatch({ type: "SET_PAGE_INDEX", pageIndex });
+  }, []);
+
+  const handleSortChange = useCallback(({ column, direction }) => {
+    tableDispatch({ type: "SET_SORT", column, direction });
+  }, []);
+
+  const handleSearch = useCallback((searchText: string) => {
+    tableDispatch({ type: "SET_QUERY", query: searchText });
+  }, []);
+
+  const handleStatusChange = useCallback(
+    (selectedOption?: ValueType<SelectOptionType, false> | null) => {
+      tableDispatch({
+        type: "SET_STATUS",
+        status: selectedOption ? (selectedOption.value as Status) : "",
+      });
     },
-    [tableDispatch]
+    []
   );
 
-  const handleSortChange = useCallback(
-    ({ column, direction }) => {
-      tableDispatch({ type: "SET_SORT", column, direction });
+  const handleAssigneeChanged = useCallback(
+    (selectedOption?: ValueType<SelectOptionType, false> | null) => {
+      tableDispatch({
+        type: "SET_ASSIGNED_TO",
+        assignedTo: selectedOption ? (selectedOption.value as number) : "",
+      });
     },
-    [tableDispatch]
-  );
-
-  const handleSearch = useCallback(
-    (searchText: string) => {
-      tableDispatch({ type: "SET_QUERY", query: searchText });
-    },
-    [tableDispatch]
+    []
   );
 
   const columns = useMemo(
@@ -154,7 +167,7 @@ const TasksPage: FC = () => {
           const { assignee } = row.row.original as Task;
           return (
             <div>
-              {assignee ? <p>{assignee.first_name}</p> : <p>Unassigned</p>}
+              {assignee ? <p>{assignee.full_name}</p> : <p>Unassigned</p>}
             </div>
           );
         },
@@ -190,7 +203,7 @@ const TasksPage: FC = () => {
   );
 
   return (
-    <div>
+    <>
       <div className="d-flex justify-content-between">
         <h4>Tasks</h4>
 
@@ -224,14 +237,7 @@ const TasksPage: FC = () => {
               }),
             }}
             isClearable={true}
-            onChange={(
-              selectedOption?: ValueType<SelectOptionType, false> | null
-            ) => {
-              tableDispatch({
-                type: "SET_STATUS",
-                status: selectedOption ? (selectedOption.value as Status) : "",
-              });
-            }}
+            onChange={handleStatusChange}
           />
         </div>
 
@@ -243,10 +249,7 @@ const TasksPage: FC = () => {
           inputId="assignee"
           name="assignee"
           loadOptions={(inputValue: string) =>
-            searchUsersByRole({
-              query: inputValue,
-              role: "staff",
-            })
+            searchUsersByRole(inputValue, "staff")
           }
           styles={{
             container: (base) => ({
@@ -255,12 +258,7 @@ const TasksPage: FC = () => {
             }),
           }}
           isClearable={true}
-          onChange={(value) => {
-            tableDispatch({
-              type: "SET_ASSIGNED_TO",
-              assignedTo: value ? value["value"] : "",
-            });
-          }}
+          onChange={handleAssigneeChanged}
         />
       </div>
 
@@ -268,12 +266,12 @@ const TasksPage: FC = () => {
         columns={columns}
         loading={!data}
         data={data}
-        setPageIndex={handlePageChange}
-        setSort={handleSortChange}
+        onPageChange={handlePageChange}
+        onSort={handleSortChange}
       />
 
       <ModalManager components={MODAL_COMPONENTS} {...modalState} />
-    </div>
+    </>
   );
 };
 

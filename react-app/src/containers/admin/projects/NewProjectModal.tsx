@@ -1,7 +1,7 @@
 import React, { FC } from "react";
-import Modal from "react-bootstrap/Modal";
 import { withFormik } from "formik";
 import * as Yup from "yup";
+import Modal from "react-bootstrap/Modal";
 
 import ProjectForm, {
   ProjectFormValues,
@@ -9,7 +9,7 @@ import ProjectForm, {
 } from "../../../forms/ProjectForm";
 
 import axios from "../../../lib/axios";
-import { FormWithModalProps } from "../../../types";
+import { FormWithModalProps } from "../../../lib/modal-manager";
 
 interface OtherProps {
   isAdmin: boolean;
@@ -17,6 +17,8 @@ interface OtherProps {
 
 const NewProjectModal: FC<FormWithModalProps> = ({ onHide }) => {
   const EnhancedProjectForm = withFormik<OtherProps, ProjectFormValues>({
+    mapPropsToValues: (props) => ({ name: "" }),
+
     validationSchema: Yup.object().shape({
       ...validationSchema.fields,
       created_by: Yup.string().required("Client is required"),

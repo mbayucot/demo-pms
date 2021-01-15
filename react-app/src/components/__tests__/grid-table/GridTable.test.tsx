@@ -1,10 +1,10 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import faker from "faker";
 
-import GridTable, { DataProps } from "../../grid-table";
-import { Project } from "../../../types/models";
+import GridTable from "../../grid-table";
+import { data } from "../../../fixtures/project";
+import { Project } from "../../../types";
 
 const setup = (overrides = {}) => {
   const columns = [
@@ -13,43 +13,30 @@ const setup = (overrides = {}) => {
       accessor: "name",
     },
   ];
-
-  const setPageIndex = jest.fn();
-  const setSort = jest.fn();
+  const onPageChange = jest.fn();
+  const onSort = jest.fn();
   const props = {
     columns,
-    setPageIndex,
-    setSort,
+    onPageChange,
+    onSort,
     ...overrides,
   };
   const { getByText } = render(<GridTable<Project> {...props} />);
-  const clickNameHeader = () => userEvent.click(getByText(/Name/i));
-  const clickNextPagination = () => userEvent.click(getByText(/Next/i));
+  const clickNameHeader = () => userEvent.click(getByText(/name/i));
+  const clickNextButton = () => userEvent.click(getByText(/next/i));
   return {
     clickNameHeader,
-    clickNextPagination,
+    clickNextButton,
     props,
   };
 };
 
-describe("Table", () => {
-  it("should render table columns, data and pagination", async () => {
-    const data: DataProps<Project> = {
-      entries: Array.from(Array(11), (_, i) => ({
-        id: i,
-        name: faker.lorem.words(),
-      })),
-      meta: {
-        current_page: 1,
-        total_count: 11,
-        total_pages: 2,
-      },
-    };
+describe("GridTable", () => {
+  it("should render table headers, rows and pagination", async () => {
     const loading = false;
-
     const {
-      props: { columns, setPageIndex },
-      clickNextPagination,
+      props: { columns, onPageChange },
+      clickNextButton,
     } = setup({ data, loading });
 
     columns.forEach((column) => {
@@ -60,25 +47,23 @@ describe("Table", () => {
       expect(screen.getByText(entry.name)).toBeInTheDocument();
     });
 
-    expect(screen.getByText("Next")).toBeInTheDocument();
-    clickNextPagination();
-    expect(setPageIndex).toHaveBeenCalled();
+    expect(screen.getByText(/next/i)).toBeInTheDocument();
+    clickNextButton();
+    expect(onPageChange).toHaveBeenCalled();
   });
 
-  it("should render new row data on sort", async () => {
+  it("should render sort icon when header is clicked", async () => {
     const {
       clickNameHeader,
-      props: { setSort },
+      props: { onSort },
     } = setup();
     clickNameHeader();
-
     expect(screen.getByText("🔼")).toBeInTheDocument();
-    expect(setSort).toHaveBeenCalled();
+    expect(onSort).toHaveBeenCalled();
   });
 
-  it("should render loading", async () => {
+  it("should render spinner", async () => {
     setup({ loading: true });
-
     expect(await screen.findByText(/loading/i)).toBeInTheDocument();
   });
 });

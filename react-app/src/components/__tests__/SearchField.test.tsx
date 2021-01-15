@@ -26,7 +26,7 @@ describe("SearchField", () => {
     expect(screen.getByPlaceholderText(placeholder)).toBeInTheDocument();
   });
 
-  it("should submit on click search", async () => {
+  it("should submit when search button is clicked", async () => {
     const { searchText, clickSearch, changeSearchInput, onSubmit } = setup();
     await changeSearchInput(searchText);
     clickSearch();

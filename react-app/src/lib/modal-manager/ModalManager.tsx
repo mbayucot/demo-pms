@@ -18,7 +18,7 @@ const ModalManager = ({
     return null;
   }
 
-  if (!(modalType in Object.keys(components))) {
+  if (!Object.keys(components).includes(modalType)) {
     throw new Error(`modalType ${modalType} not found!`);
   }
 

@@ -1,18 +1,16 @@
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { BrowserRouter, Route, Switch } from "react-router-dom";
 import faker from "faker";
-import userEvent from "@testing-library/user-event";
-import { cache } from "swr";
-import { rest } from "msw";
 import { setupServer } from "msw/node";
 
 import LoginPage from "../LoginPage";
 import { AuthProvider } from "../../contexts/auth";
+
 import { handlers } from "../../contexts/__mocks__/auth";
 
 const setup = () => {
-  const url = `/login`;
   const utils = render(
     <AuthProvider>
       <BrowserRouter>
@@ -25,7 +23,7 @@ const setup = () => {
       </BrowserRouter>
     </AuthProvider>
   );
-  const changeUsernameInput = (value: string) =>
+  const changeEmailInput = (value: string) =>
     userEvent.type(utils.getByLabelText(/email address/i), value);
   const changePasswordInput = (value: string) =>
     userEvent.type(utils.getByLabelText(/password/i), value);
@@ -38,10 +36,9 @@ const setup = () => {
     password: faker.internet.password(),
   };
   return {
-    url,
     submitButton,
     user,
-    changeUsernameInput,
+    changeEmailInput,
     changePasswordInput,
     clickSubmit,
   };
@@ -53,7 +50,6 @@ describe("LoginPage", () => {
   beforeAll(() => server.listen());
 
   afterEach(() => {
-    cache.clear();
     server.resetHandlers();
   });
 
@@ -69,68 +65,45 @@ describe("LoginPage", () => {
         name: /forgot password\?/i,
       })
     ).toHaveAttribute("href", "/password_reset");
-
-    expect(
-      screen.getByRole("link", {
-        name: /create account/i,
-      })
-    ).toHaveAttribute("href", "/signup");
   });
 
-  it("should show validation errors if invalid", async () => {
-    const { changeUsernameInput } = setup();
-    await changeUsernameInput(" ");
-    await waitFor(() => {
-      expect(screen.getByText(/Email is invalid/)).toBeDefined();
-      expect(screen.getByText(/Password is required/)).toBeDefined();
-    });
-  });
-
-  it("should submit the form if valid and redirect to tasks page", async () => {
+  it("should submit the form if valid", async () => {
     const {
       submitButton,
       user,
-      changeUsernameInput,
+      changeEmailInput,
       changePasswordInput,
       clickSubmit,
-      url,
     } = setup();
-    await changeUsernameInput(user.email);
+    await changeEmailInput(user.email);
     await changePasswordInput(user.password);
     clickSubmit();
-
     await waitFor(() => {
       expect(submitButton).toBeDisabled();
     });
-
-    expect(await screen.findByText("projects page")).toBeInTheDocument();
+    expect(await screen.findByText(/projects page/i)).toBeInTheDocument();
   });
 
   it("should show error messages if form is invalid", async () => {
     const {
       user,
-      changeUsernameInput,
+      changeEmailInput,
       changePasswordInput,
       clickSubmit,
-      url,
     } = setup();
-    await changeUsernameInput(user.email);
+    await changePasswordInput(" ");
+    await waitFor(() => {
+      expect(screen.getByText(/email is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/password is too short/i)).toBeInTheDocument();
+    });
+
+    await changeEmailInput("invalid@email.com");
     await changePasswordInput(user.password);
     clickSubmit();
-
-    server.use(
-      rest.post(url, (req, res, ctx) => {
-        return res.once(
-          ctx.status(422),
-          ctx.json({
-            error: "Login failed",
-          })
-        );
-      })
-    );
-
     await waitFor(() => {
-      expect(screen.getByText("Login failed")).toBeInTheDocument();
+      expect(
+        screen.getByText(/invalid email or password./i)
+      ).toBeInTheDocument();
     });
   });
 });

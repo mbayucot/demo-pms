@@ -1,20 +1,10 @@
 import axios from "../lib/axios";
-import { User } from "../types/models";
+import { User, SelectOptionType } from "../types";
 
-type OptionsType = {
-  value: number;
-  label: string;
-};
-
-type Params = {
-  query: string;
-  role: string;
-};
-
-export const searchUsersByRole = async ({
-  query,
-  role,
-}: Params): Promise<OptionsType[]> => {
+export const searchUsersByRole = async (
+  query: string,
+  role: string
+): Promise<SelectOptionType[]> => {
   const response = await axios.get(`users/index`, {
     params: {
       by_query: query,
@@ -27,6 +17,6 @@ export const searchUsersByRole = async ({
       ({
         value: x.id,
         label: x.full_name,
-      } as OptionsType)
+      } as SelectOptionType)
   );
 };

@@ -1,19 +1,19 @@
 import React, { FC } from "react";
-import Modal from "react-bootstrap/Modal";
 import { withFormik } from "formik";
+import Modal from "react-bootstrap/Modal";
 
 import ProjectForm, {
   ProjectFormValues,
   validationSchema,
 } from "../../../forms/ProjectForm";
 import axios from "../../../lib/axios";
-import { FormWithModalProps } from "../../../types";
+import { FormWithModalProps } from "../../../lib/modal-manager";
 
 const NewProjectModal: FC<FormWithModalProps> = ({ onHide }) => {
-  const EnhancedProjectForm = withFormik<
-    Record<string, unknown>,
-    ProjectFormValues
-  >({
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  const EnhancedProjectForm = withFormik<object, ProjectFormValues>({
+    mapPropsToValues: (props) => ({ name: "" }),
+
     validationSchema: validationSchema,
 
     handleSubmit: async (values: ProjectFormValues, { props, ...actions }) => {

@@ -7,12 +7,18 @@ import {
   act,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SWRConfig, cache } from "swr";
+import { cache, SWRConfig } from "swr";
 import { setupServer } from "msw/node";
 
 import UsersPage from "../../../admin/users/UsersPage";
 
-import { handlers, data as userData } from "../../../__mocks__/user";
+import { handlers } from "../../../__mocks__/admin/user";
+import {
+  data as userData,
+  searchData,
+  sortData,
+  paginationData,
+} from "../../../../fixtures/user";
 
 const setup = () => {
   const utils = render(
@@ -21,23 +27,21 @@ const setup = () => {
     </SWRConfig>
   );
   const searchInput = utils.getByPlaceholderText(
-    /Search.../i
+    /search.../i
   ) as HTMLInputElement;
   const changeSearchInput = (value: string) =>
     userEvent.type(searchInput, value);
   const searchButton = utils.getByRole("button", {
-    name: /Search/i,
+    name: /search/i,
   });
   const clickSearchButton = () => userEvent.click(searchButton);
   const newUserButton = utils.getByRole("button", {
-    name: /New/i,
+    name: /new user/i,
   });
   const clickNewButton = () => userEvent.click(newUserButton);
   const gridTable = screen.getByRole("table");
-  const spinner = utils.getByRole(/status/i);
   return {
     gridTable,
-    spinner,
     changeSearchInput,
     clickNewButton,
     clickSearchButton,
@@ -49,19 +53,23 @@ describe("UsersPage", () => {
 
   beforeAll(() => server.listen());
 
-  afterEach(() => {
-    server.resetHandlers();
+  beforeEach(() => {
+    cache.clear();
   });
 
   afterAll(() => server.close());
 
-  it("should render page and grid headers", async () => {
-    const { gridTable, spinner } = setup();
+  afterEach(() => {
+    server.resetHandlers();
+  });
+
+  it("should render users container", async () => {
+    const { gridTable } = setup();
     expect(screen.getByRole("heading", { name: /users/i })).toBeInTheDocument();
-    expect(spinner).toHaveTextContent(/loading/i);
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
 
     const gridUtils = within(gridTable);
-    const columns = ["email", "name", "role"];
+    const columns = ["Email", "Name", "Role"];
     columns.forEach((column) => {
       expect(
         gridUtils.getByRole("columnheader", {
@@ -70,104 +78,83 @@ describe("UsersPage", () => {
       ).toBeInTheDocument();
     });
 
-    await waitForElementToBeRemoved(() => spinner);
-
-    userData.entries.forEach((user) => {
-      const row = gridUtils
-        .getByRole("cell", {
-          name: user.email,
-        })
-        .closest("tr") as HTMLElement;
-      const rowUtils = within(row);
-      expect(
-        rowUtils.getByRole("cell", {
-          name: user.full_name,
-        })
-      ).toBeInTheDocument();
-      expect(
-        rowUtils.getByRole("cell", {
-          name: user.role,
-        })
-      ).toBeInTheDocument();
-    });
+    const user = userData.entries[0];
+    expect(
+      gridUtils.getByRole("cell", {
+        name: user.email,
+      })
+    ).toBeInTheDocument();
+    expect(
+      gridUtils.getByRole("cell", {
+        name: user.full_name,
+      })
+    ).toBeInTheDocument();
   });
 
-  it("should sort", async () => {
-    const {
-      gridTable,
-      spinner,
-      changeSearchInput,
-      clickSearchButton,
-    } = setup();
-    await waitForElementToBeRemoved(() => spinner);
+  it("should filter data when search button is clicked", async () => {
+    const { gridTable, changeSearchInput, clickSearchButton } = setup();
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
 
     await changeSearchInput("__query__");
     act(() => {
       clickSearchButton();
     });
-    await waitForElementToBeRemoved(() => spinner);
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
     const gridUtils = within(gridTable);
     expect(
       gridUtils.getByRole("cell", {
-        name: userData.entries[0].email,
+        name: searchData.entries[0].email,
       })
     ).toBeInTheDocument();
   });
 
-  it("should search", async () => {
-    const {
-      gridTable,
-      spinner,
-      changeSearchInput,
-      clickSearchButton,
-    } = setup();
-    await waitForElementToBeRemoved(() => spinner);
+  it("should sort data when grid table header is clicked", async () => {
+    const { gridTable } = setup();
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
 
-    await changeSearchInput("__query__");
-    act(() => {
-      clickSearchButton();
+    const gridUtils = within(gridTable);
+    const header = gridUtils.getByRole("columnheader", {
+      name: "Email",
     });
-    await waitForElementToBeRemoved(() => spinner);
-    const gridUtils = within(gridTable);
+    act(() => {
+      userEvent.click(header);
+    });
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
+    expect(screen.getByText("🔼")).toBeInTheDocument();
     expect(
       gridUtils.getByRole("cell", {
-        name: userData.entries[0].email,
+        name: sortData.entries[0].email,
       })
     ).toBeInTheDocument();
   });
 
-  it("should paginate", async () => {
-    const { gridTable, spinner } = setup();
-    await waitForElementToBeRemoved(() => spinner);
+  it("should paginate when next button is clicked", async () => {
+    const { gridTable } = setup();
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
 
     const gridUtils = within(gridTable);
     act(() => {
       userEvent.click(screen.getByText(/next/i));
     });
-    await waitForElementToBeRemoved(() => spinner);
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
     expect(
       gridUtils.getByRole("cell", {
-        name: userData.entries[0].email,
+        name: paginationData.entries[0].email,
       })
     ).toBeInTheDocument();
   });
 
-  it("should open new task modal", async () => {
-    const { spinner, clickNewButton } = setup();
-    await waitForElementToBeRemoved(() => spinner);
+  it("should show new user modal when new user button is clicked", async () => {
+    const { clickNewButton } = setup();
 
     clickNewButton();
-    expect(
-      screen.getByRole("heading", {
-        name: /new user/i,
-      })
-    ).toBeInTheDocument();
-    userEvent.click(screen.getByText(/×/i));
+    const dialogUtils = within(screen.getByRole("dialog"));
+    expect(dialogUtils.getByText(/new user/i)).toBeInTheDocument();
   });
 
-  it("should open edit task modal", async () => {
-    const { spinner, gridTable } = setup();
-    await waitForElementToBeRemoved(() => spinner);
+  it("should show edit user modal when edit button is clicked", async () => {
+    const { gridTable } = setup();
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
 
     const gridUtils = within(gridTable);
     const row = gridUtils
@@ -180,13 +167,13 @@ describe("UsersPage", () => {
       name: /edit/i,
     });
     userEvent.click(editButton);
-    expect(screen.getByText(/edit user/i)).toBeInTheDocument();
-    userEvent.click(screen.getByText(/×/i));
+    const dialogUtils = within(screen.getByRole("dialog"));
+    expect(dialogUtils.getByText(/edit user/i)).toBeInTheDocument();
   });
 
-  it("should open delete task modal", async () => {
-    const { gridTable, spinner } = setup();
-    await waitForElementToBeRemoved(() => spinner);
+  it("should show confirmation modal when delete button is clicked", async () => {
+    const { gridTable } = setup();
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
 
     const gridUtils = within(gridTable);
     const row = gridUtils
@@ -198,15 +185,14 @@ describe("UsersPage", () => {
     const deleteButton = rowUtils.getByRole("button", {
       name: /delete/i,
     });
-    const okButton = rowUtils.getByRole("button", {
+    userEvent.click(deleteButton);
+    const dialogUtils = within(screen.getByRole("dialog"));
+    expect(dialogUtils.getByText(/confirmation/i)).toBeInTheDocument();
+
+    const okButton = dialogUtils.getByRole("button", {
       name: /ok/i,
     });
-    userEvent.click(deleteButton);
-    expect(
-      screen.getByText(/Are you sure you want to delete this user?/i)
-    ).toBeInTheDocument();
     userEvent.click(okButton);
-
-    await waitForElementToBeRemoved(() => spinner);
+    await waitForElementToBeRemoved(() => screen.getByRole(/dialog/i));
   });
 });

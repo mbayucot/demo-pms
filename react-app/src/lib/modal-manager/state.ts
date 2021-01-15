@@ -1,6 +1,9 @@
-import { Nullable } from "../../types";
+export type Nullable<T> = T | null;
 
-export type ModalType = "NEW_MODAL" | "EDIT_MODAL" | "CONFIRM_MODAL";
+export interface FormWithModalProps {
+  id?: number;
+  onHide: (refresh?: boolean) => void;
+}
 
 export interface ModalState {
   modalType: Nullable<string>;

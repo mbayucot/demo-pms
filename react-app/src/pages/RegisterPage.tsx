@@ -7,11 +7,12 @@ import RegisterForm, {
   validationSchema,
 } from "../forms/RegisterForm";
 import { withAuth, WithAuthProps } from "../contexts/auth";
-import { LocationType } from "../types";
 
 const RegisterPage: FC = () => {
   const history = useHistory();
-  const location = useLocation<LocationType>();
+  const location = useLocation<{
+    from: { pathname: string };
+  }>();
   const { from } = location.state || { from: { pathname: "/projects" } };
   const [values, setValues] = useState<RegisterFormValues>({
     email: "",

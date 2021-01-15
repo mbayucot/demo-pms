@@ -1,15 +1,15 @@
 import React, { FC } from "react";
-import Modal from "react-bootstrap/Modal";
-import Spinner from "react-bootstrap/Spinner";
 import { withFormik } from "formik";
 import useSWR from "swr";
+import Modal from "react-bootstrap/Modal";
+import Spinner from "react-bootstrap/Spinner";
 
 import ProjectForm, {
   ProjectFormValues,
   validationSchema,
 } from "../../../forms/ProjectForm";
 import axios from "../../../lib/axios";
-import { FormWithModalProps } from "../../../types";
+import { FormWithModalProps } from "../../../lib/modal-manager";
 
 const EditProjectModal: FC<FormWithModalProps> = ({ id, onHide }) => {
   const { data } = useSWR(`admin/projects/${id}`);

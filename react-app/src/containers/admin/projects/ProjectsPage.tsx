@@ -1,13 +1,13 @@
 import React, { FC, useCallback, useReducer, useMemo, useState } from "react";
-import useSWR from "swr";
-import Button from "react-bootstrap/Button";
-import Spinner from "react-bootstrap/Spinner";
 import { NavLink } from "react-router-dom";
-import AsyncSelect from "react-select/async";
+import useSWR from "swr";
+import { Cell } from "react-table";
 import { uid } from "uid";
+import AsyncSelect from "react-select/async";
+import Button from "react-bootstrap/Button";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Popover from "react-bootstrap/Popover";
-import { Cell } from "react-table";
+import Spinner from "react-bootstrap/Spinner";
 
 import axios from "../../../lib/axios";
 import GridTable, {
@@ -18,7 +18,7 @@ import ModalManager, {
   reducer as modalReducer,
   initialModalState,
 } from "../../../lib/modal-manager";
-import { Project } from "../../../types/models";
+import { Project } from "../../../types";
 
 import SearchField from "../../../components/SearchField";
 import NewProjectModal from "./NewProjectModal";
@@ -26,9 +26,8 @@ import EditProjectModal from "./EditProjectModal";
 import ConfirmModal from "../../../components/ConfirmModal";
 import { Can } from "../../../config/can";
 
-import { downloadFile } from "../../../lib/cable/helpers";
 import { searchUsersByRole } from "../../../api/user";
-import consumer from "../../../lib/cable/consumer";
+import consumer, { downloadFile, ReceivedProps } from "../../../lib/cable";
 
 const MODAL_COMPONENTS = {
   NEW_MODAL: NewProjectModal,
@@ -50,35 +49,33 @@ const ProjectsPage: FC = () => {
 
   const { data, mutate } = useSWR(["admin/projects", tableState]);
 
-  const onHide = useCallback(
+  const handleModalClose = useCallback(
     async (refresh?: boolean) => {
-      modalDispatch({ type: "HIDE_MODAL" });
-
       if (refresh) {
         await mutate();
       }
+      modalDispatch({ type: "HIDE_MODAL" });
     },
     [mutate]
   );
 
-  const handleDeleteConfirm = useCallback(
+  const handleConfirmedDelete = useCallback(
     async (id: number) => {
-      axios.delete(`admin/projects/${id}`).then(() => {
-        onHide(true);
-      });
+      await axios.delete(`admin/projects/${id}`);
+      await handleModalClose(true);
     },
-    [onHide]
+    [handleModalClose]
   );
 
-  const handleCreate = useCallback(() => {
+  const handleCreate = () => {
     modalDispatch({
       type: "SHOW_MODAL",
       modalType: "NEW_MODAL",
       modalProps: {
-        onHide: onHide,
+        onHide: handleModalClose,
       },
     });
-  }, [onHide]);
+  };
 
   const handleEdit = useCallback(
     (id: number) => {
@@ -87,11 +84,11 @@ const ProjectsPage: FC = () => {
         modalType: "EDIT_MODAL",
         modalProps: {
           id,
-          onHide: onHide,
+          onHide: handleModalClose,
         },
       });
     },
-    [onHide]
+    [handleModalClose]
   );
 
   const handleDelete = useCallback(
@@ -100,42 +97,99 @@ const ProjectsPage: FC = () => {
         type: "SHOW_MODAL",
         modalType: "CONFIRM_MODAL",
         modalProps: {
-          message: `Are you sure you want to delete ${name}?`,
-          onHide: onHide,
-          onConfirm: () => handleDeleteConfirm(id),
+          message: `Are you sure you want to delete <span class="font-weight-bold">${name}</span>?`,
+          onHide: async (isOk: boolean) => {
+            if (isOk) {
+              await handleConfirmedDelete(id);
+            } else {
+              modalDispatch({ type: "HIDE_MODAL" });
+            }
+          },
         },
       });
     },
-    [onHide, handleDeleteConfirm]
+    [handleConfirmedDelete]
   );
 
-  const handleSearch = useCallback(
-    (searchText: string) => {
-      tableDispatch({ type: "SET_QUERY", query: searchText });
+  const handleSearch = useCallback((searchText: string) => {
+    tableDispatch({ type: "SET_QUERY", query: searchText });
+  }, []);
+
+  const handlePageChange = useCallback((pageIndex: number) => {
+    tableDispatch({ type: "SET_PAGE_INDEX", pageIndex });
+  }, []);
+
+  const handleSortChange = useCallback(({ column, direction }) => {
+    tableDispatch({ type: "SET_SORT", column, direction });
+  }, []);
+
+  const handleClientChange = useCallback((selectedOption) => {
+    tableDispatch({
+      type: "SET_CREATED_BY",
+      createdBy: selectedOption ? selectedOption.value : "",
+    });
+  }, []);
+
+  const handleExportReceived = useCallback(
+    ({ status, data }: ReceivedProps) => {
+      if (status === 200 && data) {
+        downloadFile(data);
+      } else {
+        setExportStatus("Something went wrong.");
+        setTimeout(() => {
+          setExportStatus(null);
+        }, 3000);
+      }
+
+      showLoading(false);
     },
-    [tableDispatch]
+    []
   );
 
-  const handlePageChange = useCallback(
-    (pageIndex: number) => {
-      tableDispatch({ type: "SET_PAGE_INDEX", pageIndex });
-    },
-    [tableDispatch]
-  );
+  const handleExportConnected = useCallback(async (uuid: string) => {
+    showLoading(true);
+    await axios.get(`admin/projects.csv`, {
+      params: {
+        uuid: uuid,
+      },
+    });
+  }, []);
 
-  const handleSortChange = useCallback(
-    ({ column, direction }) => {
-      tableDispatch({ type: "SET_SORT", column, direction });
-    },
-    [tableDispatch]
-  );
+  const handleExportRejected = useCallback(() => {
+    setExportStatus("Something went wrong.");
+    setTimeout(() => {
+      setExportStatus(null);
+    }, 3000);
+  }, []);
+
+  const handleExport = useCallback(async () => {
+    const uuid = uid();
+    const subscription = consumer.subscriptions.create(
+      { channel: "CsvChannel", uuid: uuid },
+      {
+        received(response) {
+          handleExportReceived(response);
+          subscription.unsubscribe();
+          consumer.disconnect();
+        },
+
+        connected() {
+          handleExportConnected(uuid);
+        },
+
+        rejected() {
+          handleExportRejected();
+        },
+      }
+    );
+  }, [handleExportReceived, handleExportConnected, handleExportRejected]);
 
   const columns = useMemo(
     () => [
       {
         Header: "Name",
         accessor: "name",
-        sortable: false,
+        sortable: true,
         Cell: (cell: Cell) => {
           const { id, name } = cell.row.original as Project;
           return <NavLink to={`/admin/projects/${id}/tasks`}>{name}</NavLink>;
@@ -154,7 +208,7 @@ const ProjectsPage: FC = () => {
           const { id, name } = row.row.original as Project;
           return (
             <div className="text-right">
-              <Can I="update" a="Project">
+              <Can I="update" a="AdminProject">
                 <Button
                   variant="success"
                   size="sm"
@@ -164,7 +218,7 @@ const ProjectsPage: FC = () => {
                   Edit
                 </Button>
               </Can>
-              <Can I="delete" a="Project">
+              <Can I="delete" a="AdminProject">
                 <Button
                   variant="danger"
                   size="sm"
@@ -182,60 +236,13 @@ const ProjectsPage: FC = () => {
     [handleEdit, handleDelete]
   );
 
-  type ReceivedProps = {
-    status: number;
-    data: {
-      file_name: string;
-      content: Blob;
-    };
-  };
-
-  const handleExport = useCallback(async () => {
-    const uuid = uid();
-    const subscription = consumer.subscriptions.create(
-      { channel: "CsvChannel", uuid: uuid },
-      {
-        received({ status, data }: ReceivedProps) {
-          if (status === 200) {
-            downloadFile(data);
-          } else {
-            setExportStatus("Something went wrong!");
-            setTimeout(() => {
-              setExportStatus(null);
-            }, 3000);
-          }
-
-          subscription.unsubscribe();
-          consumer.disconnect();
-          showLoading(false);
-        },
-
-        connected() {
-          showLoading(true);
-          axios.get(`admin/projects.csv`, {
-            params: {
-              uuid: uuid,
-            },
-          });
-        },
-
-        rejected() {
-          setExportStatus("Something went wrong!");
-          setTimeout(() => {
-            setExportStatus(null);
-          }, 3000);
-        },
-      }
-    );
-  }, []);
-
   return (
-    <div>
+    <>
       <div className="d-flex justify-content-between">
         <h4>Projects</h4>
 
         <div>
-          <Can I="create" a="Project">
+          <Can I="create" a="AdminProject">
             <Button
               onClick={handleCreate}
               variant="success"
@@ -288,11 +295,9 @@ const ProjectsPage: FC = () => {
             cacheOptions
             defaultOptions
             placeholder="Client"
+            inputId="client"
             loadOptions={(inputValue: string) =>
-              searchUsersByRole({
-                query: inputValue,
-                role: "client",
-              })
+              searchUsersByRole(inputValue, "client")
             }
             isClearable={true}
             styles={{
@@ -301,12 +306,7 @@ const ProjectsPage: FC = () => {
                 width: 250,
               }),
             }}
-            onChange={(value) => {
-              tableDispatch({
-                type: "SET_ASSIGNED_TO",
-                assignedTo: value ? value["value"] : "",
-              });
-            }}
+            onChange={handleClientChange}
           />
         </div>
       </div>
@@ -315,12 +315,12 @@ const ProjectsPage: FC = () => {
         columns={columns}
         loading={!data}
         data={data}
-        setPageIndex={handlePageChange}
-        setSort={handleSortChange}
+        onPageChange={handlePageChange}
+        onSort={handleSortChange}
       />
 
       <ModalManager components={MODAL_COMPONENTS} {...modalState} />
-    </div>
+    </>
   );
 };
 

@@ -16,10 +16,7 @@ describe("getUsersByQueryAndRole", () => {
   afterAll(() => server.close());
 
   it("should return users by query", async () => {
-    const data = await searchUsersByRole({
-      query: "hey",
-      role: "staff",
-    });
+    const data = await searchUsersByRole("hey", "staff");
     const record = userData.entries[0];
     const result = {
       value: record.id,

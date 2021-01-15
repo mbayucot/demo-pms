@@ -5,67 +5,64 @@ import {
   act,
   waitFor,
   fireEvent,
-  waitForElementToBeRemoved,
+  within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SWRConfig } from "swr";
-import { rest } from "msw";
-import { setupServer } from "msw/node";
 import selectEvent from "react-select-event";
+import { SWRConfig } from "swr";
+import { setupServer } from "msw/node";
 
 import NewProjectModal from "../../../admin/projects/NewProjectModal";
 
-import {
-  handlers as projectHandler,
-  data as projectData,
-} from "../../../__mocks__/client/project";
-import {
-  handlers as userHandler,
-  data as userData,
-} from "../../../__mocks__/user";
+import { handlers as projectHandlers } from "../../../__mocks__/admin/project";
+import { handlers as userHandlers } from "../../../../api/__mocks__/user";
+import { data as projectData } from "../../../../fixtures/project";
+import { data as userData } from "../../../../fixtures/user";
 
 const renderNewProjectModal = () => {
   const onHide = jest.fn();
-
   const props = {
     isAdmin: true,
     onHide,
   };
-  const url = `/admin/projects`;
   const project = projectData.entries[0];
-
-  const utils = render(
+  render(
     <SWRConfig value={{ dedupingInterval: 0 }}>
       <NewProjectModal {...props} />
     </SWRConfig>
   );
-  const error = { name: "__error__" };
   return {
     onHide,
-    url,
     project,
-    error,
-    utils,
   };
 };
 
-const setupModalForm = async () => {
-  const nameInput = (await screen.findByLabelText(/name/i)) as HTMLInputElement;
+const setupModalForm = () => {
+  const nameInput = screen.getByLabelText(/name/i) as HTMLInputElement;
+  const clientSelect = screen.getByLabelText(/client/i) as HTMLInputElement;
   const changeNameInput = (value: string) =>
     fireEvent.change(nameInput, { target: { value: value } });
+  const changeClientSelect = async (value: string) => {
+    fireEvent.change(clientSelect, {
+      target: { value: value },
+    });
+    await selectEvent.select(clientSelect, value);
+  };
   const submitButton = screen.getByRole("button", {
-    name: /Save/i,
+    name: /save/i,
   });
   const clickSubmit = () => userEvent.click(submitButton);
   return {
     nameInput,
+    clientSelect,
     changeNameInput,
+    changeClientSelect,
     clickSubmit,
   };
 };
 
 describe("NewProjectModal", () => {
-  const server = setupServer(...projectHandler, ...userHandler);
+  const server = setupServer(...projectHandlers, ...userHandlers);
 
   beforeAll(() => server.listen());
 
@@ -75,71 +72,50 @@ describe("NewProjectModal", () => {
 
   afterAll(() => server.close());
 
-  it("should show new project modal and user info", async () => {
+  it("should render new project modal", async () => {
+    renderNewProjectModal();
+    const dialogUtils = within(screen.getByRole("dialog"));
+    expect(dialogUtils.getByText(/new project/i)).toBeInTheDocument();
+  });
+
+  it("should submit the form if valid", async () => {
     const { project, onHide } = renderNewProjectModal();
-    expect(screen.getByText(/New Project/i)).toBeInTheDocument();
+    const {
+      changeNameInput,
+      changeClientSelect,
+      clickSubmit,
+    } = setupModalForm();
 
-    const { changeNameInput, clickSubmit } = await setupModalForm();
-
-    changeNameInput("");
+    changeNameInput(project.name);
+    await changeClientSelect(userData.entries[0].full_name);
     act(() => {
       clickSubmit();
     });
-    expect(await screen.findByText(/Name is required/)).toBeInTheDocument();
-    expect(await screen.findByText(/Client is required/)).toBeInTheDocument();
-
-    await changeNameInput(project.name);
-    fireEvent.change(screen.getByLabelText(/Client/i), {
-      target: { value: userData.entries[0].first_name },
-    });
-    await waitForElementToBeRemoved(() => screen.getByText(/loading/i));
-    await selectEvent.select(
-      screen.getByLabelText(/Client/i),
-      userData.entries[0].full_name as string
-    );
-
-    act(() => {
-      clickSubmit();
-    });
-
     await waitFor(() => {
       expect(onHide).toHaveBeenCalledWith(true);
     });
   });
 
-  it("should show new project modal and error message", async () => {
-    const { url, project, onHide } = renderNewProjectModal();
-
-    const { changeNameInput, clickSubmit } = await setupModalForm();
-
-    server.use(
-      rest.post(url, (req, res, ctx) => {
-        return res.once(
-          ctx.status(422),
-          ctx.json({ name: "Project already exists" })
-        );
-      })
-    );
-
-    await changeNameInput(project.name);
-    fireEvent.change(screen.getByLabelText(/Client/i), {
-      target: { value: userData.entries[0].first_name },
-    });
-    await waitForElementToBeRemoved(() => screen.getByText(/loading/i));
-    await selectEvent.select(
-      screen.getByLabelText(/Client/i),
-      userData.entries[0].full_name as string
-    );
-
+  it("should show error messages if form is invalid", async () => {
+    renderNewProjectModal();
+    const {
+      changeClientSelect,
+      changeNameInput,
+      clickSubmit,
+    } = setupModalForm();
+    changeNameInput("");
     act(() => {
       clickSubmit();
     });
+    expect(await screen.findByText(/name is required/i)).toBeInTheDocument();
 
-    expect(
-      await screen.findByText(/Project already exists/)
-    ).toBeInTheDocument();
-    await waitFor(() => {
-      expect(onHide).not.toHaveBeenCalledWith();
+    await changeNameInput("__test_error_input__");
+    await changeClientSelect(userData.entries[0].full_name);
+    act(() => {
+      clickSubmit();
     });
+    expect(
+      await screen.findByText(/__test_error_description__/)
+    ).toBeInTheDocument();
   });
 });

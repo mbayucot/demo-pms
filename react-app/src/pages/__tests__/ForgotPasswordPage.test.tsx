@@ -1,32 +1,35 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
-import faker from "faker";
+import {
+  render,
+  screen,
+  waitFor,
+  act,
+  fireEvent,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { cache } from "swr";
-import { rest } from "msw";
+import faker from "faker";
 import { setupServer } from "msw/node";
 import { BrowserRouter } from "react-router-dom";
 
 import ForgotPasswordPage from "../ForgotPasswordPage";
 
+import { handlers } from "../__mocks__/user";
+
 const setup = () => {
-  const url = `/forgot_password`;
   const utils = render(
     <BrowserRouter>
       <ForgotPasswordPage />
     </BrowserRouter>
   );
-  const changeEmailInput = (value: string) =>
-    userEvent.type(
-      utils.getByPlaceholderText(/Enter your email address/i),
-      value
-    );
+  const emailInput = utils.getByPlaceholderText(/enter your email address/i);
+  const changeEmailInput = (value: string) => {
+    fireEvent.change(emailInput, { target: { value: value } });
+  };
   const submitButton = utils.getByRole("button", {
-    name: /Send password reset email/i,
+    name: /send password reset email/i,
   });
   const clickSubmit = () => userEvent.click(submitButton);
   return {
-    url,
     submitButton,
     changeEmailInput,
     clickSubmit,
@@ -34,12 +37,11 @@ const setup = () => {
 };
 
 describe("ForgotPasswordPage", () => {
-  const server = setupServer();
+  const server = setupServer(...handlers);
 
   beforeAll(() => server.listen());
 
   afterEach(() => {
-    cache.clear();
     server.resetHandlers();
   });
 
@@ -52,46 +54,38 @@ describe("ForgotPasswordPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("should show validation errors if invalid", async () => {
-    const { clickSubmit } = setup();
-    clickSubmit();
-    await waitFor(() => {
-      expect(screen.getByText(/Email is required/)).toBeDefined();
+  it("should submit the form if valid", async () => {
+    const { changeEmailInput, clickSubmit } = setup();
+    changeEmailInput(faker.internet.email());
+    await act(async () => {
+      clickSubmit();
     });
-  });
-
-  it("should submit the form if valid and redirect to projects page", async () => {
-    const { submitButton, changeEmailInput, clickSubmit, url } = setup();
-    await changeEmailInput(faker.internet.email());
-    clickSubmit();
-
     await waitFor(() => {
-      expect(submitButton).toBeDisabled();
+      expect(
+        screen.getByText(
+          /Check your email for a link to reset your password. If it doesn’t appear within a few minutes, check your spam folder./i
+        )
+      ).toBeInTheDocument();
     });
-
-    expect(
-      screen.getByText("Forgot password successful. Please check your email.")
-    ).toBeInTheDocument();
   });
 
   it("should show error messages if form is invalid", async () => {
-    const { changeEmailInput, clickSubmit, url } = setup();
-    await changeEmailInput(faker.internet.email());
-    clickSubmit();
-
-    server.use(
-      rest.post(url, (req, res, ctx) => {
-        return res.once(
-          ctx.status(404),
-          ctx.json({
-            email: "Email does not exists",
-          })
-        );
-      })
-    );
-
+    const { changeEmailInput, clickSubmit } = setup();
+    act(() => {
+      clickSubmit();
+    });
     await waitFor(() => {
-      expect(screen.getByText("Email does not exists")).toBeInTheDocument();
+      expect(screen.getByText(/email is required/i)).toBeInTheDocument();
+    });
+
+    changeEmailInput("invalid@email.com");
+    act(() => {
+      clickSubmit();
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByText(/__test_error_description__/i)
+      ).toBeInTheDocument();
     });
   });
 });

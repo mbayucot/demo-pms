@@ -5,56 +5,41 @@ import {
   act,
   waitFor,
   fireEvent,
+  within,
 } from "@testing-library/react";
-import faker from "faker";
 import userEvent from "@testing-library/user-event";
-import { SWRConfig, cache } from "swr";
-import { rest } from "msw";
+import { SWRConfig } from "swr";
 import { setupServer } from "msw/node";
 
 import NewProjectModal from "../../../client/projects/NewProjectModal";
 
-import {
-  handlers as projectHandler,
-  data as projectData,
-} from "../../../__mocks__/client/project";
-import {
-  handlers as userHandler,
-  data as userData,
-} from "../../../__mocks__/user";
+import { handlers as projectHandlers } from "../../../__mocks__/client/project";
+import { data as projectData } from "../../../../fixtures/project";
 
 const renderNewProjectModal = () => {
   const onHide = jest.fn();
-
   const props = {
     id: 1,
     onHide,
   };
-  const url = `/projects`;
-  const project = {
-    name: `${faker.random.number()} ${faker.lorem.word()}`,
-  };
-
+  const project = projectData.entries[0];
   render(
     <SWRConfig value={{ dedupingInterval: 0 }}>
       <NewProjectModal {...props} />
     </SWRConfig>
   );
-  const error = { name: "__error__" };
   return {
     onHide,
-    url,
     project,
-    error,
   };
 };
 
-const setupModalForm = async () => {
-  const nameInput = (await screen.findByLabelText(/name/i)) as HTMLInputElement;
+const setupModalForm = () => {
+  const nameInput = screen.getByLabelText(/name/i) as HTMLInputElement;
   const changeNameInput = (value: string) =>
     fireEvent.change(nameInput, { target: { value: value } });
   const submitButton = screen.getByRole("button", {
-    name: /Save/i,
+    name: /save/i,
   });
   const clickSubmit = () => userEvent.click(submitButton);
   return {
@@ -65,62 +50,50 @@ const setupModalForm = async () => {
 };
 
 describe("NewProjectModal", () => {
-  const server = setupServer(...projectHandler, ...userHandler);
+  const server = setupServer(...projectHandlers);
 
   beforeAll(() => server.listen());
+
+  afterAll(() => server.close());
 
   afterEach(() => {
     server.resetHandlers();
   });
 
-  afterAll(() => server.close());
+  it("should render new project modal", async () => {
+    renderNewProjectModal();
+    const dialogUtils = within(screen.getByRole("dialog"));
+    expect(dialogUtils.getByText(/new project/i)).toBeInTheDocument();
+  });
 
-  it("should show new project modal and user info", async () => {
-    const { url, project, onHide } = renderNewProjectModal();
-    expect(screen.getByText(/New Project/i)).toBeInTheDocument();
-
-    const { changeNameInput, clickSubmit } = await setupModalForm();
-
-    changeNameInput("");
-    act(() => {
-      clickSubmit();
-    });
-    expect(await screen.findByText(/Name is required/)).toBeInTheDocument();
+  it("should submit the form if valid", async () => {
+    const { project, onHide } = renderNewProjectModal();
+    const { changeNameInput, clickSubmit } = setupModalForm();
 
     await changeNameInput(project.name);
     act(() => {
       clickSubmit();
     });
-
     await waitFor(() => {
       expect(onHide).toHaveBeenCalledWith(true);
     });
   });
 
-  it("should show new project modal and error message", async () => {
-    const { url, project, onHide } = renderNewProjectModal();
-
-    const { changeNameInput, clickSubmit } = await setupModalForm();
-
-    server.use(
-      rest.post(url, (req, res, ctx) => {
-        return res.once(
-          ctx.status(422),
-          ctx.json({ name: "Project already exists" })
-        );
-      })
-    );
-
-    await changeNameInput(project.name);
+  it("should show error messages if form is invalid", async () => {
+    renderNewProjectModal();
+    const { changeNameInput, clickSubmit } = setupModalForm();
+    changeNameInput("");
     act(() => {
       clickSubmit();
     });
+    expect(await screen.findByText(/name is required/i)).toBeInTheDocument();
 
-    expect(
-      await screen.findByText(/Project already exists/)
-    ).toBeInTheDocument();
-    await waitFor(() => {
-      expect(onHide).not.toHaveBeenCalledWith();
+    await changeNameInput("__test_error_input__");
+    act(() => {
+      clickSubmit();
     });
+    expect(
+      await screen.findByText(/__test_error_description__/)
+    ).toBeInTheDocument();
   });
 });

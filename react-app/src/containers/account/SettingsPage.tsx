@@ -1,5 +1,7 @@
 import React, { FC, useState } from "react";
 import { withFormik } from "formik";
+import Alert from "react-bootstrap/Alert";
+
 import ChangePasswordForm, {
   ChangePasswordFormValues,
   validationSchema,
@@ -9,16 +11,13 @@ import axios from "../../lib/axios";
 const SettingsPage: FC = () => {
   const [showAlert, setShowAlert] = useState(false);
 
-  const onSuccess = () => {
-    setShowAlert(true);
-  };
-
   const EnhancedChangePasswordForm = withFormik<
-    Record<string, unknown>,
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    object,
     ChangePasswordFormValues
   >({
     mapPropsToValues: () => ({
-      old_password: "",
+      current_password: "",
       new_password: "",
       confirm_password: "",
     }),
@@ -31,7 +30,7 @@ const SettingsPage: FC = () => {
     ) => {
       try {
         await axios.post(`users/update_password`, values);
-        onSuccess();
+        setShowAlert(true);
       } catch (error) {
         actions.setErrors(error.response.data);
       }
@@ -41,7 +40,15 @@ const SettingsPage: FC = () => {
   return (
     <>
       <h4 className="mb-4">Change password</h4>
-      {showAlert && <p>password change successful</p>}
+      {showAlert && (
+        <Alert
+          variant="success"
+          onClose={() => setShowAlert(false)}
+          dismissible
+        >
+          Your password has been successfully changed.
+        </Alert>
+      )}
       <EnhancedChangePasswordForm />
     </>
   );

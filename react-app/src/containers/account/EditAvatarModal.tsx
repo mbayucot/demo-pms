@@ -1,40 +1,36 @@
-import React, { FC, useRef } from "react";
-import Modal from "react-bootstrap/Modal";
+import React, { FC, useCallback, useRef } from "react";
 import Button from "react-bootstrap/Button";
+import Modal from "react-bootstrap/Modal";
 import AvatarEditor from "react-avatar-editor";
 
 interface Props {
-  handleClose: () => void;
+  onHide: () => void;
   preview: string;
-  handleSubmit: (values: Blob) => void;
+  onSubmit: (values: Blob) => void;
 }
 
-const ProfilePictureModal: FC<Props> = ({
-  handleClose,
-  handleSubmit,
-  preview,
-}) => {
+const EditAvatarModal: FC<Props> = ({ onHide, onSubmit, preview }) => {
   const editorRef = useRef<AvatarEditor>(null);
 
-  const handleSubmitRef = () => {
+  const handleSubmitRef = useCallback(() => {
     if (editorRef && editorRef.current) {
       editorRef.current.getImageScaledToCanvas().toBlob((blob: Blob | null) => {
         if (blob) {
-          handleSubmit(blob);
+          onSubmit(blob);
         }
       }, "image/png");
     }
-  };
+  }, [editorRef, onSubmit]);
 
   return (
-    <Modal show={true} onHide={handleClose} centered>
+    <Modal show={true} onHide={onHide} centered>
       <Modal.Header closeButton>
         <div className="modal-title">
           <h6>Crop your new profile picture</h6>
         </div>
       </Modal.Header>
 
-      <Modal.Body>
+      <Modal.Body className="text-center">
         <AvatarEditor
           ref={editorRef}
           image={preview}
@@ -57,4 +53,4 @@ const ProfilePictureModal: FC<Props> = ({
   );
 };
 
-export default ProfilePictureModal;
+export default EditAvatarModal;

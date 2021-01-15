@@ -1,8 +1,8 @@
-import { FormikProps } from "formik";
 import React from "react";
+import { FormikProps } from "formik";
+import * as Yup from "yup";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
-import * as Yup from "yup";
 import Spinner from "react-bootstrap/Spinner";
 
 import { User } from "../types";
@@ -47,7 +47,7 @@ const ProfileForm = (
         </Form.Control.Feedback>
       </Form.Group>
       <Form.Group controlId="first_name">
-        <Form.Label>First Name</Form.Label>
+        <Form.Label>First name</Form.Label>
         <Form.Control
           type="text"
           name="first_name"
@@ -60,7 +60,7 @@ const ProfileForm = (
         </Form.Control.Feedback>
       </Form.Group>
       <Form.Group controlId="last_name">
-        <Form.Label>Last Name</Form.Label>
+        <Form.Label>Last name</Form.Label>
         <Form.Control
           type="text"
           name="last_name"

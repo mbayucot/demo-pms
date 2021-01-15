@@ -1,7 +1,7 @@
 import React, { FC } from "react";
-import Modal from "react-bootstrap/Modal";
 import { withFormik } from "formik";
 import useSWR from "swr";
+import Modal from "react-bootstrap/Modal";
 import Spinner from "react-bootstrap/Spinner";
 
 import axios from "../../../lib/axios";
@@ -9,7 +9,7 @@ import UserForm, {
   UserFormValues,
   validationSchema,
 } from "../../../forms/UserForm";
-import { FormWithModalProps } from "../../../types";
+import { FormWithModalProps } from "../../../lib/modal-manager";
 
 const EditUserModal: FC<FormWithModalProps> = ({ id, onHide }) => {
   const { data } = useSWR([`admin/users/${id}`]);
@@ -17,7 +17,7 @@ const EditUserModal: FC<FormWithModalProps> = ({ id, onHide }) => {
   const EnhancedUserForm = withFormik<UserFormValues, UserFormValues>({
     mapPropsToValues: (props) => ({
       email: props.email || "",
-      password: props.password || "",
+      password: "",
       first_name: props.first_name || "",
       last_name: props.last_name || "",
       role: props.role || "",
@@ -27,6 +27,9 @@ const EditUserModal: FC<FormWithModalProps> = ({ id, onHide }) => {
 
     handleSubmit: async (values: UserFormValues, { props, ...actions }) => {
       try {
+        if (values.password?.length === 0) {
+          delete values.password;
+        }
         await axios.patch(`admin/users/${id}`, values);
         onHide(true);
       } catch (error) {

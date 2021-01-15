@@ -1,12 +1,12 @@
-import { FormikProps } from "formik";
 import React from "react";
+import { FormikProps } from "formik";
+import * as Yup from "yup";
+import AsyncSelect from "react-select/async";
 import Button from "react-bootstrap/Button";
+import Col from "react-bootstrap/Col";
 import Form from "react-bootstrap/Form";
 import Modal from "react-bootstrap/Modal";
-import * as Yup from "yup";
 import Spinner from "react-bootstrap/Spinner";
-import AsyncSelect from "react-select/async";
-import Col from "react-bootstrap/Col";
 
 import { searchUsersByRole } from "../api/user";
 
@@ -22,17 +22,18 @@ export const validationSchema = Yup.object().shape({
   summary: Yup.string()
     .required("Summary is required")
     .min(4, "Summary is too short")
-    .max(20, "Summary is too long"),
+    .max(32, "Summary is too long"),
   description: Yup.string()
     .required("Description is required")
     .min(4, "Description is too short")
-    .max(20, "Description is too long"),
+    .max(32, "Description is too long"),
   status: Yup.string().required("Status is required"),
 });
 
 interface OtherProps {
   assignee?: User;
   isAdmin?: boolean;
+  isNew?: boolean;
 }
 
 const TaskForm = (
@@ -47,6 +48,7 @@ const TaskForm = (
     setFieldValue,
     assignee,
     isAdmin,
+    isNew,
   } = props;
 
   return (
@@ -59,6 +61,7 @@ const TaskForm = (
               <Form.Control
                 type="text"
                 name="summary"
+                autoFocus
                 value={values.summary}
                 onChange={handleChange}
                 isInvalid={!!errors.summary}
@@ -94,6 +97,9 @@ const TaskForm = (
                 onChange={handleChange}
                 isInvalid={!!errors.status}
               >
+                <option value="" disabled>
+                  {" "}
+                </option>
                 {enumKeys(Status).map((key) => {
                   return (
                     <option key={key} value={key}>
@@ -106,31 +112,30 @@ const TaskForm = (
                 {errors.status}
               </Form.Control.Feedback>
             </Form.Group>
-            <Form.Group controlId="assignee">
-              <Form.Label className="font-weight-medium">Assignee</Form.Label>
-              <AsyncSelect
-                inputId="assignee"
-                closeMenuOnSelect={true}
-                isClearable={true}
-                cacheOptions
-                defaultOptions={!isAdmin}
-                isDisabled={!isAdmin}
-                loadOptions={(inputValue: string) =>
-                  searchUsersByRole({
-                    query: inputValue,
-                    role: "staff",
-                  })
-                }
-                defaultValue={
-                  assignee
-                    ? { value: assignee.id, label: assignee.full_name }
-                    : {}
-                }
-                onChange={(value) => {
-                  setFieldValue("assigned_to", value ? value.value : "");
-                }}
-              />
-            </Form.Group>
+            {!isNew && (
+              <Form.Group controlId="assignee">
+                <Form.Label className="font-weight-medium">Assignee</Form.Label>
+                <AsyncSelect
+                  name="assignee"
+                  inputId="assignee"
+                  isClearable={true}
+                  cacheOptions
+                  defaultOptions={isAdmin}
+                  isDisabled={!isAdmin}
+                  loadOptions={(inputValue: string) =>
+                    searchUsersByRole(inputValue, "staff")
+                  }
+                  defaultValue={
+                    assignee
+                      ? { value: assignee.id, label: assignee.full_name }
+                      : {}
+                  }
+                  onChange={(value) => {
+                    setFieldValue("assigned_to", value ? value.value : "");
+                  }}
+                />
+              </Form.Group>
+            )}
           </Col>
         </Form.Row>
       </Modal.Body>

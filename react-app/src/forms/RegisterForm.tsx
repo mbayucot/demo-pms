@@ -1,13 +1,13 @@
 import React from "react";
-import Form from "react-bootstrap/Form";
-import Button from "react-bootstrap/Button";
-import { FormikProps } from "formik";
 import { NavLink } from "react-router-dom";
+import { FormikProps } from "formik";
 import * as Yup from "yup";
-import Spinner from "react-bootstrap/Spinner";
-import { useAuth } from "../contexts/auth";
 import Alert from "react-bootstrap/Alert";
+import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
+import Spinner from "react-bootstrap/Spinner";
 
+import { useAuth } from "../contexts/auth";
 import { User } from "../types";
 
 export type RegisterFormValues = Pick<User, "email" | "password">;
@@ -17,7 +17,12 @@ export const validationSchema = Yup.object().shape({
   password: Yup.string()
     .min(8, "Password is too short")
     .max(20, "Password is too long")
-    .required("Password is required"),
+    .required("Password is required")
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/,
+      "Must contain 8 characters, one uppercase, one\n" +
+        "                lowercase, one Number and one special case character"
+    ),
 });
 
 const RegisterForm = (

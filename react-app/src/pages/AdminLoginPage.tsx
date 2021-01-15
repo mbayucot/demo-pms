@@ -7,7 +7,6 @@ import LoginForm, {
   validationSchema,
 } from "../forms/LoginForm";
 import { withAuth, WithAuthProps } from "../contexts/auth";
-import { LocationType } from "../types";
 
 interface OtherProps {
   isAdmin: boolean;
@@ -15,7 +14,9 @@ interface OtherProps {
 
 const AdminLoginPage: FC = () => {
   const history = useHistory();
-  const location = useLocation<LocationType>();
+  const location = useLocation<{
+    from: { pathname: string };
+  }>();
   const { from } = location.state || { from: { pathname: "/admin/projects" } };
   const [values, setValues] = useState<LoginFormValues>({
     email: "",

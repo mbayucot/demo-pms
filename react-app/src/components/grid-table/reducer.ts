@@ -1,11 +1,11 @@
-import { TableState } from "./state";
-import { SortDirection } from "../../types";
-import { Role, Status } from "../../types/models";
+import { TableState, SortDirection } from "./state";
+import { Role, Status } from "../../types";
 
 type Action =
   | { type: "SET_PAGE_INDEX"; pageIndex: number }
   | { type: "SET_QUERY"; query: string }
   | { type: "SET_SORT"; column: string; direction: SortDirection }
+  | { type: "SET_CREATED_BY"; createdBy: number | "" }
   | { type: "SET_ASSIGNED_TO"; assignedTo: number | "" }
   | { type: "SET_STATUS"; status: Status | "" }
   | { type: "SET_ROLE"; role: Role | "" };
@@ -29,6 +29,11 @@ const reducer = (state: TableState, action: Action): TableState => {
           column: action.column,
           direction: action.direction,
         },
+      };
+    case "SET_CREATED_BY":
+      return {
+        ...state,
+        by_created_by: action.createdBy,
       };
     case "SET_ASSIGNED_TO":
       return {

@@ -1,3 +1,4 @@
+import React, { ReactElement, useEffect } from "react";
 import {
   useTable,
   Column,
@@ -6,13 +7,13 @@ import {
   Row,
   HeaderGroup,
 } from "react-table";
-import React, { ReactElement, useEffect } from "react";
 import Pagination from "rc-pagination";
-import "rc-pagination/assets/index.css";
 import Table from "react-bootstrap/Table";
 import Spinner from "react-bootstrap/Spinner";
 
-import { SortDirection } from "../../types/models";
+import "rc-pagination/assets/index.css";
+
+import { SortDirection } from "./state";
 
 interface SortProps {
   column: string;
@@ -33,11 +34,13 @@ export interface GridTableProps<T> {
   error?: Error;
   loading?: boolean;
   data?: DataProps<T>;
-  setPageIndex: (pageIndex: number) => void;
-  setSort: ({ column, direction }: SortProps) => void;
+  onPageChange: (pageIndex: number) => void;
+  onSort?: ({ column, direction }: SortProps) => void;
 }
 
-const GridTable = <T extends object>({
+type ObjectOf<T> = { [P in keyof T]: T[P] };
+
+const GridTable = <T extends ObjectOf<T>>({
   columns,
   loading = true,
   data: { entries, meta } = {
@@ -48,8 +51,8 @@ const GridTable = <T extends object>({
       total_pages: 0,
     },
   },
-  setPageIndex,
-  setSort,
+  onPageChange,
+  onSort,
 }: GridTableProps<T>): ReactElement => {
   const {
     getTableProps,
@@ -71,13 +74,13 @@ const GridTable = <T extends object>({
   );
 
   useEffect(() => {
-    if (sortBy !== undefined && sortBy.length > 0) {
-      setSort({
+    if (onSort && sortBy !== undefined && sortBy.length > 0) {
+      onSort({
         column: sortBy[0].id,
         direction: !sortBy[0].desc ? "asc" : "desc",
       });
     }
-  }, [setSort, sortBy]);
+  }, [onSort, sortBy]);
 
   const textItemRender = (
     current: number,
@@ -182,7 +185,7 @@ const GridTable = <T extends object>({
       {meta.total_count > 10 && (
         <div className="text-center">
           <Pagination
-            onChange={setPageIndex}
+            onChange={onPageChange}
             current={meta.current_page}
             total={meta.total_count}
             pageSize={pageSize}

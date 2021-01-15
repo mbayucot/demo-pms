@@ -8,6 +8,7 @@ import PublicRoute from "./PublicRoute";
 import AuthRoute from "./AuthRoute";
 import { AbilityContext, defineAbilityFor } from "../config/can";
 import { useAuth } from "../contexts/auth";
+
 const LandingPage = lazy(() => import("../pages/landing/LandingPage"));
 const LoginPage = lazy(() => import("../pages/LoginPage"));
 const RegisterPage = lazy(() => import("../pages/RegisterPage"));
@@ -78,8 +79,7 @@ const AppRoutes: FC = () => {
           >
             <TasksPage />
           </PrivateRoute>
-
-          <PrivateRoute path="/projects" title="Project" subject="Project">
+          <PrivateRoute path="/projects" title="Projects" subject="Project">
             <ProjectsPage />
           </PrivateRoute>
 

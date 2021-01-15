@@ -1,11 +1,11 @@
-import { FormikProps } from "formik";
 import React from "react";
-import Button from "react-bootstrap/Button";
-import Form from "react-bootstrap/Form";
-import Col from "react-bootstrap/Col";
+import { FormikProps } from "formik";
 import * as Yup from "yup";
-import Spinner from "react-bootstrap/Spinner";
+import Button from "react-bootstrap/Button";
+import Col from "react-bootstrap/Col";
+import Form from "react-bootstrap/Form";
 import Modal from "react-bootstrap/Modal";
+import Spinner from "react-bootstrap/Spinner";
 
 import { User, Role } from "../types";
 import { enumKeys } from "../lib/utils";
@@ -20,12 +20,20 @@ export const validationSchema = Yup.object().shape({
   first_name: Yup.string()
     .required("First name is required")
     .min(2, "First name is too short")
-    .max(20, "First name is too long"),
+    .max(32, "First name is too long"),
   last_name: Yup.string()
     .required("Last name is required")
     .min(2, "Last name is too short")
-    .max(20, "Last name is too long"),
+    .max(32, "Last name is too long"),
   role: Yup.string().required("Role is required"),
+  password: Yup.string()
+    .min(8, "Password is too short")
+    .max(20, "Password is too long")
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/,
+      "Must contain 8 characters, one uppercase, one\n" +
+        "                lowercase, one Number and one special case character"
+    ),
 });
 
 const UserForm = (props: FormikProps<UserFormValues>): React.ReactElement => {
@@ -53,7 +61,7 @@ const UserForm = (props: FormikProps<UserFormValues>): React.ReactElement => {
             <Form.Group controlId="password">
               <Form.Label className="font-weight-medium">Password</Form.Label>
               <Form.Control
-                type="text"
+                type="password"
                 name="password"
                 value={values.password}
                 onChange={handleChange}
@@ -63,9 +71,8 @@ const UserForm = (props: FormikProps<UserFormValues>): React.ReactElement => {
                 {errors.password}
               </Form.Control.Feedback>
               <Form.Text id="passwordHelpBlock" muted>
-                Password must be 8-20 characters long, contain letters and
-                numbers, and must not contain spaces, special characters, or
-                emoji.
+                Password must contain 8 characters, one uppercase, one
+                lowercase, one Number and one special case character.
               </Form.Text>
             </Form.Group>
             <Form.Group controlId="role">

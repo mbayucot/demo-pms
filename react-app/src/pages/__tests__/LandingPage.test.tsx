@@ -12,7 +12,7 @@ describe("LandingPage", () => {
       </BrowserRouter>
     );
     expect(
-      screen.getByRole("heading", { name: /Lorem ipsum dolor sit amet/i })
+      screen.getByRole("heading", { name: /lorem ipsum dolor sit amet/i })
     ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: /get started/i })

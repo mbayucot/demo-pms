@@ -17,10 +17,7 @@ import * as Sentry from "@sentry/react";
 });
  */
 
-/**
- * @returns React.ReactElement
- */
-function App(): React.ReactElement {
+const App = (): React.ReactElement => {
   return (
     <ErrorBoundary
       FallbackComponent={ErrorFallbackPage}
@@ -50,6 +47,6 @@ function App(): React.ReactElement {
       </AuthProvider>
     </ErrorBoundary>
   );
-}
+};
 
 export default App;

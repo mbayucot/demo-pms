@@ -1,17 +1,30 @@
 import React, { FC } from "react";
-import Modal from "react-bootstrap/Modal";
 import { withFormik } from "formik";
+import Modal from "react-bootstrap/Modal";
 
 import UserForm, {
   UserFormValues,
   validationSchema,
 } from "../../../forms/UserForm";
 import axios from "../../../lib/axios";
-import { FormWithModalProps } from "../../../types";
+import { FormWithModalProps } from "../../../lib/modal-manager";
+import * as Yup from "yup";
 
 const NewUserModal: FC<FormWithModalProps> = ({ onHide }) => {
-  const EnhancedUserForm = withFormik<Record<string, unknown>, UserFormValues>({
-    validationSchema: validationSchema,
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  const EnhancedUserForm = withFormik<object, UserFormValues>({
+    mapPropsToValues: () => ({
+      email: "",
+      password: "",
+      first_name: "",
+      last_name: "",
+      role: "",
+    }),
+
+    validationSchema: Yup.object().shape({
+      ...validationSchema.fields,
+      password: Yup.string().required("Password is required"),
+    }),
 
     handleSubmit: async (values: UserFormValues, { props, ...actions }) => {
       try {

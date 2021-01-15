@@ -6,57 +6,42 @@ import {
   waitFor,
   fireEvent,
   waitForElementToBeRemoved,
+  within,
 } from "@testing-library/react";
-import faker from "faker";
-import { SWRConfig, cache } from "swr";
-import { rest } from "msw";
-import { setupServer } from "msw/node";
 import userEvent from "@testing-library/user-event";
+import { SWRConfig, cache } from "swr";
+import { setupServer } from "msw/node";
 
 import EditUserModal from "../../../admin/users/EditUserModal";
 
-import { handlers, data } from "../../../__mocks__/user";
+import { handlers } from "../../../__mocks__/admin/user";
+import { data as userData } from "../../../../fixtures/user";
 
 const renderEditUserModal = () => {
   const onHide = jest.fn();
-
   const props = {
     id: 1,
     onHide,
   };
-  const url = `/admin/users/${props.id}`;
-  const user = {
-    email: faker.internet.email(),
-    first_name: faker.name.firstName(),
-    last_name: faker.name.lastName(),
-    role: "staff",
-  };
-
+  const user = userData.entries[0];
   render(
     <SWRConfig value={{ dedupingInterval: 0 }}>
       <EditUserModal {...props} />
     </SWRConfig>
   );
-  const error = { name: "__error__" };
   return {
     onHide,
-    url,
     user,
-    error,
   };
 };
 
-const setupModalForm = async () => {
-  const emailInput = (await screen.findByLabelText(
-    /email/i
-  )) as HTMLInputElement;
-  const firstNameInput = (await screen.findByLabelText(
+const setupModalForm = () => {
+  const emailInput = screen.getByLabelText(/email/i) as HTMLInputElement;
+  const firstNameInput = screen.getByLabelText(
     /first name/i
-  )) as HTMLInputElement;
-  const lastNameInput = (await screen.findByLabelText(
-    /last name/i
-  )) as HTMLInputElement;
-  const roleInput = (await screen.findByLabelText(/role/i)) as HTMLInputElement;
+  ) as HTMLInputElement;
+  const lastNameInput = screen.getByLabelText(/last name/i) as HTMLInputElement;
+  const roleInput = screen.getByLabelText(/role/i) as HTMLSelectElement;
   const changeEmailInput = (value: string) =>
     fireEvent.change(emailInput, { target: { value: value } });
   const changeFirstNameInput = (value: string) =>
@@ -66,7 +51,7 @@ const setupModalForm = async () => {
   const changeRoleInput = (value: string) =>
     fireEvent.change(roleInput, { target: { value: value } });
   const submitButton = screen.getByRole("button", {
-    name: /Save/i,
+    name: /save/i,
   });
   const clickSubmit = () => userEvent.click(submitButton);
   return {
@@ -88,17 +73,20 @@ describe("EditUserModal", () => {
 
   beforeAll(() => server.listen());
 
-  afterEach(() => {
-    server.resetHandlers();
+  beforeEach(() => {
+    cache.clear();
   });
 
   afterAll(() => server.close());
 
-  it("should show edit user modal and user info", async () => {
-    const { url, user, onHide } = renderEditUserModal();
-    expect(screen.getByText(/Edit User/i)).toBeInTheDocument();
-    expect(screen.getByRole(/status/i)).toHaveTextContent(/loading/i);
+  afterEach(() => {
+    server.resetHandlers();
+  });
 
+  it("should render edit project modal and show info", async () => {
+    const { user } = renderEditUserModal();
+    const dialogUtils = within(screen.getByRole("dialog"));
+    expect(dialogUtils.getByText(/edit user/i)).toBeInTheDocument();
     await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
 
     const {
@@ -106,35 +94,18 @@ describe("EditUserModal", () => {
       firstNameInput,
       lastNameInput,
       roleInput,
-      changeEmailInput,
-      clickSubmit,
-    } = await setupModalForm();
-
+    } = setupModalForm();
     expect(emailInput.value).toBe(user.email);
     expect(firstNameInput.value).toBe(user.first_name);
     expect(lastNameInput.value).toBe(user.last_name);
     expect(roleInput.value).toBe(user.role);
+  });
 
-    changeEmailInput("");
-    act(() => {
-      clickSubmit();
-    });
-    expect(await screen.findByText(/Email is required/)).toBeDefined();
+  it("should submit the form if valid", async () => {
+    const { user, onHide } = renderEditUserModal();
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
 
-    changeEmailInput(faker.internet.email());
-    server.use(
-      rest.patch(url, (req, res, ctx) => {
-        return res.once(
-          ctx.status(422),
-          ctx.json({ email: "Email already exists" })
-        );
-      })
-    );
-    await act(async () => {
-      clickSubmit();
-    });
-    expect(await screen.findByText(/Email already exists/)).toBeDefined();
-
+    const { changeEmailInput, clickSubmit } = setupModalForm();
     changeEmailInput(user.email);
     act(() => {
       clickSubmit();
@@ -142,5 +113,27 @@ describe("EditUserModal", () => {
     await waitFor(() => {
       expect(onHide).toHaveBeenCalledWith(true);
     });
+  });
+
+  it("should show error messages if form is invalid", async () => {
+    renderEditUserModal();
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
+
+    const { changeFirstNameInput, clickSubmit } = setupModalForm();
+    changeFirstNameInput("");
+    await act(async () => {
+      clickSubmit();
+    });
+    expect(
+      await screen.findByText(/first name is required/i)
+    ).toBeInTheDocument();
+
+    changeFirstNameInput("__test_error_input__");
+    await act(async () => {
+      clickSubmit();
+    });
+    expect(
+      await screen.findByText(/__test_error_description__/i)
+    ).toBeInTheDocument();
   });
 });

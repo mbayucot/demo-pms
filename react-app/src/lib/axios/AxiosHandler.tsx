@@ -1,14 +1,14 @@
 import React, { FC, useState } from "react";
-import Alert from "react-bootstrap/Alert";
 import { useHistory } from "react-router-dom";
+import Alert from "react-bootstrap/Alert";
 
-import axios from "../lib/axios";
+import axios from "./index";
 
 interface ErrorHandlerProps {
   children: React.ReactNode;
 }
 
-const ErrorHandler: FC<ErrorHandlerProps> = ({ children }) => {
+const AxiosHandler: FC<ErrorHandlerProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
   const history = useHistory();
 
@@ -36,7 +36,6 @@ const ErrorHandler: FC<ErrorHandlerProps> = ({ children }) => {
           break;
       }
     }
-
     return Promise.reject(error);
   });
 
@@ -52,4 +51,4 @@ const ErrorHandler: FC<ErrorHandlerProps> = ({ children }) => {
   );
 };
 
-export default ErrorHandler;
+export default AxiosHandler;

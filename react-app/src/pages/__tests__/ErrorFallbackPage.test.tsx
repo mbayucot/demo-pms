@@ -7,7 +7,7 @@ import ErrorFallbackPage from "../ErrorFallbackPage";
 
 const setup = () => {
   const resetErrorBoundary = jest.fn();
-  const error: Error = new Error("__test_error__");
+  const error: Error = new Error("__test_error_input__");
   const props = {
     error,
     resetErrorBoundary,
@@ -22,7 +22,7 @@ const setup = () => {
 };
 
 describe("ErrorFallbackPage", () => {
-  it("should render page and reset error on try again click", async () => {
+  it("should render fallback page and handle reset", async () => {
     const { resetErrorBoundary, clickTryAgain } = setup();
     expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
     clickTryAgain();

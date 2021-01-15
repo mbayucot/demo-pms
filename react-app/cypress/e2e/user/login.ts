@@ -2,15 +2,19 @@
 /// <reference types="cypress" />
 
 describe("login", function () {
-  const username = Cypress.env("username");
-  const password = Cypress.env("password");
+  const users = Cypress.env("users");
+  const { email, password } = users.client;
+
+  after(() => {
+    cy.logout();
+  });
 
   it("should login an existing user", () => {
     cy.visit("/");
-    cy.findByText("Log in").click();
-    cy.findByLabelText(/Email Address/i).type(username);
+    cy.findByRole("link", { name: /log in/i }).click();
+    cy.findByLabelText(/email address/i).type(email);
     cy.findByLabelText(/password/i).type(password);
     cy.findByRole("button", { name: /sign in/i }).click();
-    cy.url().should("eq", `${Cypress.config().baseUrl}projects`);
+    cy.url().should("include", "/projects");
   });
 });

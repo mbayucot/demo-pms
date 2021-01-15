@@ -2,7 +2,7 @@ import React, { FC } from "react";
 import Container from "react-bootstrap/Container";
 
 import Header from "./Header";
-import ErrorHandler from "../ErrorHandler";
+import AxiosHandler from "../../lib/axios/AxiosHandler";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,7 +13,7 @@ const Layout: FC<LayoutProps> = ({ children }) => {
     <>
       <Header />
       <Container className="mt-4">
-        <ErrorHandler>{children}</ErrorHandler>
+        <AxiosHandler>{children}</AxiosHandler>
       </Container>
     </>
   );

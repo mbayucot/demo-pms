@@ -1,13 +1,13 @@
 import React, { FC } from "react";
-import Modal from "react-bootstrap/Modal";
 import { withFormik } from "formik";
+import Modal from "react-bootstrap/Modal";
 
 import TaskForm, {
   TaskFormValues,
   validationSchema,
 } from "../../../forms/TaskForm";
 import axios from "../../../lib/axios";
-import { FormWithModalProps } from "../../../types";
+import { FormWithModalProps } from "../../../lib/modal-manager";
 
 interface NewTaskModalProps extends FormWithModalProps {
   projectId: string | number | undefined;
@@ -19,6 +19,15 @@ interface OtherProps {
 
 const NewTaskModal: FC<NewTaskModalProps> = ({ projectId, onHide }) => {
   const EnhancedTaskForm = withFormik<OtherProps, TaskFormValues>({
+    mapPropsToValues: (props) => {
+      return {
+        summary: "",
+        description: "",
+        status: "",
+        assigned_to: "",
+      };
+    },
+
     validationSchema: validationSchema,
 
     handleSubmit: async (values: TaskFormValues, { props, ...actions }) => {

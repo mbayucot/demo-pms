@@ -1,8 +1,8 @@
 import React from "react";
-import Form from "react-bootstrap/Form";
 import { FormikProps } from "formik";
-import Button from "react-bootstrap/Button";
 import * as Yup from "yup";
+import Button from "react-bootstrap/Button";
+import Form from "react-bootstrap/Form";
 import Spinner from "react-bootstrap/Spinner";
 
 import { User } from "../types";
@@ -13,7 +13,9 @@ export const validationSchema = Yup.object().shape({
   email: Yup.string().email("Email is invalid").required("Email is required"),
 });
 
-const ForgotPasswordForm = (props: FormikProps<ForgotPasswordFormValues>) => {
+const ForgotPasswordForm = (
+  props: FormikProps<ForgotPasswordFormValues>
+): React.ReactElement => {
   const { values, handleChange, errors, isSubmitting, handleSubmit } = props;
 
   return (

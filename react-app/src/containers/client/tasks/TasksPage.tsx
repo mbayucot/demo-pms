@@ -8,15 +8,15 @@ import React, {
   ChangeEvent,
 } from "react";
 import useSWR from "swr";
+import { uid } from "uid";
+import { useParams } from "react-router-dom";
+import { Cell } from "react-table";
+import Spinner from "react-bootstrap/Spinner";
 import Button from "react-bootstrap/Button";
 import OverlayTrigger from "react-bootstrap/OverlayTrigger";
 import Popover from "react-bootstrap/Popover";
-import { useParams } from "react-router-dom";
-import Select, { ValueType } from "react-select";
-import { uid } from "uid";
 import InfoIcon from "@atlaskit/icon/glyph/info";
-import { Cell } from "react-table";
-import Spinner from "react-bootstrap/Spinner";
+import Select, { ValueType } from "react-select";
 
 import axios from "../../../lib/axios";
 import GridTable, {
@@ -29,14 +29,14 @@ import ModalManager, {
 } from "../../../lib/modal-manager";
 
 import SearchField from "../../../components/SearchField";
+import ConfirmModal from "../../../components/ConfirmModal";
 import NewTaskModal from "./NewTaskModal";
 import EditTaskModal from "./EditTaskModal";
-import ConfirmModal from "../../../components/ConfirmModal";
-import consumer from "../../../lib/cable/consumer";
+import consumer, { ReceivedProps } from "../../../lib/cable";
 import importTaskTemplate from "../../../assets/docs/import-task.csv";
 
-import { SelectOptionType } from "../../../types";
-import { Status, Task } from "../../../types/models";
+import { SelectOptionType, Status, Task } from "../../../types";
+
 import { enumKeys } from "../../../lib/utils";
 
 const MODAL_COMPONENTS = {
@@ -64,7 +64,7 @@ const TasksPage: FC = () => {
 
   const [importStatus, setImportStatus] = useState<string | null>(null);
 
-  const onHide = useCallback(
+  const handleModalClose = useCallback(
     async (refresh?: boolean) => {
       if (refresh) {
         await mutate();
@@ -75,24 +75,16 @@ const TasksPage: FC = () => {
     [mutate]
   );
 
-  const handleDeleteConfirm = useCallback(
-    async (id: number) => {
-      axios.delete(`tasks/${id}`).then(() => {
-        onHide(true);
-      });
-    },
-    [onHide]
-  );
-
   const handleCreate = useCallback(() => {
     modalDispatch({
       type: "SHOW_MODAL",
       modalType: "NEW_MODAL",
       modalProps: {
-        onHide: onHide,
+        projectId,
+        onHide: handleModalClose,
       },
     });
-  }, [onHide]);
+  }, [projectId, handleModalClose]);
 
   const handleEdit = useCallback(
     (id: number) => {
@@ -101,11 +93,19 @@ const TasksPage: FC = () => {
         modalType: "EDIT_MODAL",
         modalProps: {
           id,
-          onHide: onHide,
+          onHide: handleModalClose,
         },
       });
     },
-    [onHide]
+    [handleModalClose]
+  );
+
+  const handleConfirmedDelete = useCallback(
+    async (id: number) => {
+      await axios.delete(`tasks/${id}`);
+      await handleModalClose(true);
+    },
+    [handleModalClose]
   );
 
   const handleDelete = useCallback(
@@ -114,34 +114,92 @@ const TasksPage: FC = () => {
         type: "SHOW_MODAL",
         modalType: "CONFIRM_MODAL",
         modalProps: {
-          message: `Are you sure you want to delete ${summary}?`,
-          onHide: onHide,
-          onConfirm: () => handleDeleteConfirm(id),
+          message: `Are you sure you want to delete <span class="font-weight-bold">${summary}</span>?`,
+          onHide: async (isOk: boolean) => {
+            if (isOk) {
+              await handleConfirmedDelete(id);
+            } else {
+              modalDispatch({ type: "HIDE_MODAL" });
+            }
+          },
         },
       });
     },
-    [onHide, handleDeleteConfirm]
+    [handleConfirmedDelete]
   );
 
-  const handlePageChange = useCallback(
-    (pageIndex: number) => {
-      tableDispatch({ type: "SET_PAGE_INDEX", pageIndex });
+  const handleImport = useCallback(() => {
+    if (fileUploadRef && fileUploadRef.current) {
+      fileUploadRef.current.click();
+    }
+  }, [fileUploadRef]);
+
+  const handleFileChange = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      if (event.currentTarget && event.currentTarget.files) {
+        const uuid = uid();
+        const formData = new FormData();
+        formData.append("uuid", uuid);
+        formData.append("file", event.currentTarget.files[0]);
+        event.currentTarget.value = "";
+
+        const subscription = consumer.subscriptions.create(
+          { channel: "CsvChannel", uuid: uuid },
+          {
+            received({ status }: ReceivedProps) {
+              if (status === 200) {
+                setImportStatus("Your csv has been successfully imported.");
+                mutate();
+              } else {
+                setImportStatus("Something went wrong.");
+              }
+
+              subscription.unsubscribe();
+              consumer.disconnect();
+              showLoading(false);
+              setTimeout(() => {
+                setImportStatus(null);
+              }, 3000);
+            },
+
+            connected() {
+              showLoading(true);
+              axios.post(`projects/${projectId}/tasks/import`, formData);
+            },
+
+            rejected() {
+              setImportStatus("Something went wrong.");
+              setTimeout(() => {
+                setImportStatus(null);
+              }, 3000);
+            },
+          }
+        );
+      }
     },
-    [tableDispatch]
+    [mutate, projectId]
   );
 
-  const handleSortChange = useCallback(
-    ({ column, direction }) => {
-      tableDispatch({ type: "SET_SORT", column, direction });
-    },
-    [tableDispatch]
-  );
+  const handlePageChange = useCallback((pageIndex: number) => {
+    tableDispatch({ type: "SET_PAGE_INDEX", pageIndex });
+  }, []);
 
-  const handleSearch = useCallback(
-    (searchText: string) => {
-      tableDispatch({ type: "SET_QUERY", query: searchText });
+  const handleSortChange = useCallback(({ column, direction }) => {
+    tableDispatch({ type: "SET_SORT", column, direction });
+  }, []);
+
+  const handleSearch = useCallback((searchText: string) => {
+    tableDispatch({ type: "SET_QUERY", query: searchText });
+  }, []);
+
+  const handleStatusChange = useCallback(
+    (selectedOption?: ValueType<SelectOptionType, false> | null) => {
+      tableDispatch({
+        type: "SET_STATUS",
+        status: selectedOption ? (selectedOption.value as Status) : "",
+      });
     },
-    [tableDispatch]
+    []
   );
 
   const columns = useMemo(
@@ -201,60 +259,8 @@ const TasksPage: FC = () => {
     [handleEdit, handleDelete]
   );
 
-  const handleImport = () => {
-    if (fileUploadRef && fileUploadRef.current) {
-      fileUploadRef.current.click();
-    }
-  };
-
-  const handleFileChange = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      if (event.currentTarget && event.currentTarget.files) {
-        const uuid = uid();
-        const formData = new FormData();
-        formData.append("uuid", uuid);
-        formData.append("file", event.currentTarget.files[0]);
-        event.currentTarget.value = "";
-
-        const subscription = consumer.subscriptions.create(
-          { channel: "CsvChannel", uuid: uuid },
-          {
-            received(data: { status: number }) {
-              if (data.status === 200) {
-                setImportStatus("Tasks successfully imported.");
-                mutate();
-              } else {
-                setImportStatus("Something went wrong!");
-              }
-
-              subscription.unsubscribe();
-              consumer.disconnect();
-              showLoading(false);
-              setTimeout(() => {
-                setImportStatus(null);
-              }, 3000);
-            },
-
-            connected() {
-              showLoading(true);
-              axios.post(`projects/${projectId}/tasks/import`, formData);
-            },
-
-            rejected() {
-              setImportStatus("Something went wrong!");
-              setTimeout(() => {
-                setImportStatus(null);
-              }, 3000);
-            },
-          }
-        );
-      }
-    },
-    [mutate, projectId]
-  );
-
   return (
-    <div>
+    <>
       <div className="d-flex justify-content-between">
         <h4>Tasks</h4>
 
@@ -352,14 +358,7 @@ const TasksPage: FC = () => {
                 width: 250,
               }),
             }}
-            onChange={(
-              selectedOption?: ValueType<SelectOptionType, false> | null
-            ) => {
-              tableDispatch({
-                type: "SET_STATUS",
-                status: selectedOption ? (selectedOption.value as Status) : "",
-              });
-            }}
+            onChange={handleStatusChange}
           />
         </div>
       </div>
@@ -368,12 +367,12 @@ const TasksPage: FC = () => {
         columns={columns}
         loading={!data}
         data={data}
-        setPageIndex={handlePageChange}
-        setSort={handleSortChange}
+        onPageChange={handlePageChange}
+        onSort={handleSortChange}
       />
 
       <ModalManager components={MODAL_COMPONENTS} {...modalState} />
-    </div>
+    </>
   );
 };
 

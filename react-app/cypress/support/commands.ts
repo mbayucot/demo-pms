@@ -11,20 +11,13 @@
 //
 // -- This is a parent command --
 import "@testing-library/cypress/add-commands";
+import "cypress-file-upload";
 
-Cypress.Commands.add("assertHome", () => {
-  cy.url().should("eq", `${Cypress.config().baseUrl}/projects`);
-});
+import "./localStorage";
+import "./login";
+import "./modal";
+import "./table";
+import "./search";
 
-//
-//
-// -- This is a child command --
-// Cypress.Commands.add("drag", { prevSubject: 'element'}, (subject, options) => { ... })
-//
-//
-// -- This is a dual command --
-// Cypress.Commands.add("dismiss", { prevSubject: 'optional'}, (subject, options) => { ... })
-//
-//
-// -- This will overwrite an existing command --
-// Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
+import "./project";
+import "./task";

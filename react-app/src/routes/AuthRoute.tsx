@@ -1,6 +1,7 @@
 import React from "react";
 import { Route, RouteProps } from "react-router-dom";
 import Helmet from "react-helmet";
+
 import Layout from "../layouts/auth/Layout";
 
 interface AuthRouteProps extends RouteProps {

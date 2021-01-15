@@ -1,32 +1,44 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
-import faker from "faker";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { cache } from "swr";
-import { rest } from "msw";
+import faker from "faker";
 import { setupServer } from "msw/node";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, MemoryRouter, Route } from "react-router-dom";
 
 import ResetPasswordPage from "../ResetPasswordPage";
 import { handlers } from "../__mocks__/user";
 
 const setup = () => {
-  const url = `/users/password`;
   const utils = render(
     <BrowserRouter>
-      <ResetPasswordPage />
+      <MemoryRouter initialEntries={[`/reset_password/:token`]}>
+        <Route path="/reset_password/:token">
+          <ResetPasswordPage />
+        </Route>
+      </MemoryRouter>
     </BrowserRouter>
   );
+  const newPasswordInput = utils.getByLabelText(
+    /new password/i
+  ) as HTMLInputElement;
+  const confirmPasswordInput = utils.getByLabelText(
+    /confirm password/i
+  ) as HTMLInputElement;
   const changeNewPasswordInput = (value: string) =>
-    userEvent.type(utils.getByLabelText(/New Password/i), value);
+    fireEvent.change(newPasswordInput, { target: { value: value } });
   const changeConfirmPasswordInput = (value: string) =>
-    userEvent.type(utils.getByLabelText(/Confirm Password/i), value);
+    fireEvent.change(confirmPasswordInput, { target: { value: value } });
   const submitButton = utils.getByRole("button", {
-    name: /Save/i,
+    name: /reset password/i,
   });
   const clickSubmit = () => userEvent.click(submitButton);
   return {
-    url,
     submitButton,
     changeNewPasswordInput,
     changeConfirmPasswordInput,
@@ -40,7 +52,6 @@ describe("ResetPasswordPage", () => {
   beforeAll(() => server.listen());
 
   afterEach(() => {
-    cache.clear();
     server.resetHandlers();
   });
 
@@ -49,38 +60,25 @@ describe("ResetPasswordPage", () => {
   it("should render page", () => {
     setup();
     expect(
-      screen.getByRole("heading", { name: /Reset your password/i })
+      screen.getByRole("heading", { name: /reset your password/i })
     ).toBeInTheDocument();
   });
 
-  it("should show validation errors if invalid", async () => {
-    const { clickSubmit } = setup();
-    clickSubmit();
-    await waitFor(() => {
-      expect(screen.getByText(/New password is required/)).toBeDefined();
-      expect(screen.getByText(/Confirm password is required/)).toBeDefined();
-    });
-  });
-
-  it("should submit the form if valid and redirect to projects page", async () => {
+  it("should submit the form if valid", async () => {
     const {
-      submitButton,
       changeNewPasswordInput,
       changeConfirmPasswordInput,
       clickSubmit,
-      url,
     } = setup();
-    await changeNewPasswordInput(faker.internet.password());
-    await changeConfirmPasswordInput(faker.internet.password());
+    const password = `${faker.internet.password()}!1`;
+    changeNewPasswordInput(password);
+    changeConfirmPasswordInput(password);
     clickSubmit();
-
     await waitFor(() => {
-      expect(submitButton).toBeDisabled();
+      expect(
+        screen.getByText(/password changed successfully!/i)
+      ).toBeInTheDocument();
     });
-
-    expect(
-      screen.getByText("Password changed successfully!")
-    ).toBeInTheDocument();
   });
 
   it("should show error messages if form is invalid", async () => {
@@ -88,25 +86,25 @@ describe("ResetPasswordPage", () => {
       changeNewPasswordInput,
       changeConfirmPasswordInput,
       clickSubmit,
-      url,
     } = setup();
-    await changeNewPasswordInput(faker.internet.password());
-    await changeConfirmPasswordInput(faker.internet.password());
     clickSubmit();
-
-    server.use(
-      rest.post(url, (req, res, ctx) => {
-        return res.once(
-          ctx.status(404),
-          ctx.json({
-            new_password: "Password is invalid",
-          })
-        );
-      })
-    );
-
     await waitFor(() => {
-      expect(screen.getByText("Password is invalid")).toBeInTheDocument();
+      expect(screen.getByText(/new password is required/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/confirm password is required/i)
+      ).toBeInTheDocument();
+    });
+
+    const password = "__test_error_input__A1!";
+    changeNewPasswordInput(password);
+    changeConfirmPasswordInput(password);
+    act(() => {
+      clickSubmit();
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByText(/__test_error_description__/i)
+      ).toBeInTheDocument();
     });
   });
 });

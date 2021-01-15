@@ -15,12 +15,13 @@ const ResetPasswordPage: FC = () => {
   }>();
   const [showAlert, setShowAlert] = useState(false);
 
-  const onSuccess = () => {
-    setShowAlert(true);
-  };
-
   const EnhancedChangePasswordForm = withAuth(
     withFormik<WithAuthProps, ResetPasswordFormValues>({
+      mapPropsToValues: () => ({
+        new_password: "",
+        confirm_password: "",
+      }),
+
       validationSchema: validationSchema,
 
       handleSubmit: async (
@@ -34,7 +35,7 @@ const ResetPasswordPage: FC = () => {
               ...{ token },
             },
           });
-          onSuccess();
+          setShowAlert(true);
         } catch (error) {
           actions.setErrors(error.response.data);
         }
@@ -42,18 +43,16 @@ const ResetPasswordPage: FC = () => {
     })(ResetPasswordForm)
   );
 
-  return (
-    <>
-      {showAlert ? (
-        <div>
-          <p>Password changed successfully!</p>
-          <NavLink to="/login">Return to sign in</NavLink>
-        </div>
-      ) : (
-        <EnhancedChangePasswordForm />
-      )}
-    </>
-  );
+  if (showAlert) {
+    return (
+      <div>
+        <p>Password changed successfully!</p>
+        <NavLink to="/login">Return to sign in</NavLink>
+      </div>
+    );
+  }
+
+  return <EnhancedChangePasswordForm />;
 };
 
 export default ResetPasswordPage;

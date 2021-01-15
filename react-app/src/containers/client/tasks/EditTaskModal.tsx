@@ -1,7 +1,7 @@
 import React, { FC } from "react";
-import Modal from "react-bootstrap/Modal";
 import { withFormik } from "formik";
 import useSWR from "swr";
+import Modal from "react-bootstrap/Modal";
 import Spinner from "react-bootstrap/Spinner";
 
 import TaskForm, {
@@ -9,7 +9,7 @@ import TaskForm, {
   validationSchema,
 } from "../../../forms/TaskForm";
 import axios from "../../../lib/axios";
-import { FormWithModalProps } from "../../../types";
+import { FormWithModalProps } from "../../../lib/modal-manager";
 
 const EditTaskModal: FC<FormWithModalProps> = ({ id, onHide }) => {
   const { data } = useSWR(`tasks/${id}`);
@@ -35,7 +35,7 @@ const EditTaskModal: FC<FormWithModalProps> = ({ id, onHide }) => {
   })(TaskForm);
 
   return (
-    <Modal show={true} animation={false} onHide={onHide} centered>
+    <Modal show={true} animation={false} onHide={onHide} centered size="lg">
       <Modal.Header closeButton>
         <div className="modal-title">
           <h6>Edit Task</h6>

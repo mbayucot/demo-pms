@@ -1,4 +1,6 @@
-import { SortDirection, Status, Role } from "../../types";
+import { Status, Role } from "../../types";
+
+export type SortDirection = "asc" | "desc";
 
 export interface TableState {
   page: number;
@@ -9,6 +11,7 @@ export interface TableState {
   };
   by_status?: Status | "";
   by_role?: Role | "";
+  by_created_by?: number | "";
   by_assigned_to?: number | "";
 }
 

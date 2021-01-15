@@ -1,7 +1,7 @@
 import React, { FC } from "react";
+import { NavLink } from "react-router-dom";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import { NavLink } from "react-router-dom";
 import Container from "react-bootstrap/Container";
 
 import { Wrapper } from "./style";

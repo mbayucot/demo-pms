@@ -9,18 +9,19 @@ const ConfirmAccountPage: FC = () => {
   }>();
   const { data } = useSWR([`confirmation?confirmation_token=${token}`]);
 
+  if (!data) {
+    return (
+      <Spinner animation="border" role="status">
+        <span className="sr-only">Loading...</span>
+      </Spinner>
+    );
+  }
+
   return (
-    <>
-      {!data ? (
-        <Spinner animation="border" role="status">
-          <span className="sr-only">Loading...</span>
-        </Spinner>
-      ) : (
-        <p>
-          Account confirmed. Please <NavLink to="/">Please login!</NavLink>
-        </p>
-      )}
-    </>
+    <p>
+      Your email address has been successfully confirmed.
+      <NavLink to="/">Return to sign in</NavLink>
+    </p>
   );
 };
 

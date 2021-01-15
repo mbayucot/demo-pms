@@ -1,8 +1,8 @@
-import { FormikProps } from "formik";
 import React from "react";
+import { FormikProps } from "formik";
+import * as Yup from "yup";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
-import * as Yup from "yup";
 import Spinner from "react-bootstrap/Spinner";
 
 export type ResetPasswordFormValues = {
@@ -13,27 +13,28 @@ export const validationSchema = Yup.object().shape({
   new_password: Yup.string()
     .required("New password is required")
     .min(8, "New password is too short")
-    .max(20, "New password is too long"),
+    .max(32, "New password is too long")
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/,
+      "Must contain 8 characters, one uppercase, one\n" +
+        "                lowercase, one Number and one special case character"
+    ),
   confirm_password: Yup.string()
+    .oneOf([Yup.ref("new_password")], "Passwords must match")
     .required("Confirm password is required")
     .min(8, "Confirm password is too short")
-    .max(20, "Confirm password is too long")
-    .test("passwords-match", "Passwords must match", function (value) {
-      return this.parent.password === value;
-    }),
+    .max(32, "Confirm password is too long")
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{8,})/,
+      "Must contain 8 characters, one uppercase, one\n" +
+        "                lowercase, one Number and one special case character"
+    ),
 });
 
 const ResetPasswordForm = (
   props: FormikProps<ResetPasswordFormValues>
 ): React.ReactElement => {
-  const {
-    values,
-    handleChange,
-    errors,
-
-    isSubmitting,
-    handleSubmit,
-  } = props;
+  const { values, handleChange, errors, isSubmitting, handleSubmit } = props;
 
   return (
     <Form noValidate onSubmit={handleSubmit}>
@@ -71,7 +72,7 @@ const ResetPasswordForm = (
           className="btn-blue btn-block"
           disabled={isSubmitting}
         >
-          Save
+          Reset password
           {isSubmitting && (
             <Spinner
               as="span"

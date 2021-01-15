@@ -6,29 +6,33 @@ import ConfirmModal from "../ConfirmModal";
 
 const setup = () => {
   const onHide = jest.fn();
-  const onConfirm = jest.fn();
   const props = {
     message: "__test_message__",
     onHide,
-    onConfirm,
   };
   const utils = render(<ConfirmModal {...props} />);
   const clickOk = () => userEvent.click(utils.getByText(/ok/i));
   const clickCancel = () => userEvent.click(utils.getByText(/cancel/i));
-  return { clickOk, clickCancel, onHide, onConfirm };
+  return { clickOk, clickCancel, onHide };
 };
 
 describe("ConfirmModal", () => {
-  it("should render modal and close modal on ok click", async () => {
-    const { clickOk, onConfirm } = setup();
+  it("should render modal", async () => {
+    const { clickOk, onHide } = setup();
     expect(screen.getByText(/__test_message__/i)).toBeInTheDocument();
     clickOk();
-    expect(onConfirm).toHaveBeenCalled();
+    expect(onHide).toHaveBeenCalledWith(true);
   });
 
-  it("should close modal on cancel click", async () => {
+  it("should close modal when ok button is clicked", async () => {
+    const { clickOk, onHide } = setup();
+    clickOk();
+    expect(onHide).toHaveBeenCalledWith(true);
+  });
+
+  it("should close modal when cancel button is clicked", async () => {
     const { clickCancel, onHide } = setup();
     clickCancel();
-    expect(onHide).toHaveBeenCalled();
+    expect(onHide).toHaveBeenCalledWith(false);
   });
 });

@@ -1,11 +1,11 @@
 import React, { FC } from "react";
-import Navbar from "react-bootstrap/Navbar";
-import Nav from "react-bootstrap/Nav";
+import { useHistory, NavLink } from "react-router-dom";
+import Avatar from "@atlaskit/avatar";
 import Container from "react-bootstrap/Container";
 import Dropdown from "react-bootstrap/Dropdown";
 import DropdownButton from "react-bootstrap/DropdownButton";
-import { useHistory, NavLink } from "react-router-dom";
-import Avatar from "@atlaskit/avatar";
+import Nav from "react-bootstrap/Nav";
+import Navbar from "react-bootstrap/Navbar";
 
 import { useAuth } from "../../contexts/auth";
 import { Can } from "../../config/can";
@@ -14,7 +14,6 @@ const Header: FC = () => {
   const { user } = useAuth();
   const history = useHistory();
   const { logout } = useAuth();
-
   return (
     <Navbar bg="dark" expand="lg" variant="dark">
       <Container fluid>
@@ -55,7 +54,7 @@ const Header: FC = () => {
             <DropdownButton
               menuAlign="right"
               title={<Avatar size="small" src={user?.avatar} />}
-              id="dropdown-menu-align-right"
+              id="account-dropdown"
               variant="dark"
               className="bg-dark border-0 text-white"
             >

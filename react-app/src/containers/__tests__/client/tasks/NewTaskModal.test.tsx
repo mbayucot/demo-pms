@@ -5,41 +5,32 @@ import {
   act,
   waitFor,
   fireEvent,
+  within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { cache } from "swr";
-import { rest } from "msw";
 import { setupServer } from "msw/node";
 
 import NewTaskModal from "../../../client/tasks/NewTaskModal";
 
-import {
-  handlers as taskHandler,
-  data as taskData,
-} from "../../../__mocks__/task";
-import { handlers as userHandler } from "../../../__mocks__/user";
+import { handlers as taskHandlers } from "../../../__mocks__/client/task";
+import { handlers as userHandlers } from "../../../../api/__mocks__/user";
+import { data as taskData } from "../../../../fixtures/task";
 
 const renderNewTaskModal = () => {
   const onHide = jest.fn();
-
   const props = {
     projectId: 1,
     onHide,
   };
-  const url = `/projects/${props.projectId}/tasks`;
   const task = taskData.entries[0];
-
   render(<NewTaskModal {...props} />);
-  const error = { name: "__error__" };
   return {
     onHide,
-    url,
     task,
-    error,
   };
 };
 
-const setupModalForm = async () => {
+const setupModalForm = () => {
   const summaryInput = screen.getByLabelText(/summary/i) as HTMLInputElement;
   const descriptionInput = screen.getByLabelText(
     /description/i
@@ -52,7 +43,7 @@ const setupModalForm = async () => {
   const changeStatusInput = (value: string) =>
     fireEvent.change(statusInput, { target: { value: value } });
   const submitButton = screen.getByRole("button", {
-    name: /Save/i,
+    name: /save/i,
   });
   const clickSubmit = () => userEvent.click(submitButton);
   return {
@@ -67,7 +58,7 @@ const setupModalForm = async () => {
 };
 
 describe("NewTaskModal", () => {
-  const server = setupServer(...taskHandler, ...userHandler);
+  const server = setupServer(...taskHandlers, ...userHandlers);
 
   beforeAll(() => server.listen());
 
@@ -77,65 +68,55 @@ describe("NewTaskModal", () => {
 
   afterAll(() => server.close());
 
-  it("should show new task modal and user info", async () => {
+  it("should render new task modal", async () => {
+    renderNewTaskModal();
+    const dialogUtils = within(screen.getByRole("dialog"));
+    expect(dialogUtils.getByText(/new task/i)).toBeInTheDocument();
+  });
+
+  it("should submit the form if valid", async () => {
     const { task, onHide } = renderNewTaskModal();
-    expect(screen.getByText(/New Task/i)).toBeInTheDocument();
 
     const {
       changeSummaryInput,
       changeDescriptionInput,
       changeStatusInput,
       clickSubmit,
-    } = await setupModalForm();
-
-    changeSummaryInput("");
-    act(() => {
-      clickSubmit();
-    });
-    expect(await screen.findByText(/Summary is required/)).toBeDefined();
-    expect(await screen.findByText(/Description is required/)).toBeDefined();
-    expect(await screen.findByText(/Status is required/)).toBeDefined();
-
+    } = setupModalForm();
     changeSummaryInput(task.summary);
     changeDescriptionInput(task.description);
     changeStatusInput(task.status);
     act(() => {
       clickSubmit();
     });
-
     await waitFor(() => {
       expect(onHide).toHaveBeenCalledWith(true);
     });
   });
 
-  it("should show new task modal and error message", async () => {
-    const { url, task, onHide } = renderNewTaskModal();
+  it("should show error messages if form is invalid", async () => {
+    const { task } = renderNewTaskModal();
+
     const {
       changeSummaryInput,
       changeDescriptionInput,
       changeStatusInput,
       clickSubmit,
-    } = await setupModalForm();
+    } = setupModalForm();
+    changeSummaryInput("");
+    act(() => {
+      clickSubmit();
+    });
+    expect(await screen.findByText(/summary is required/i)).toBeInTheDocument();
 
-    server.use(
-      rest.post(url, (req, res, ctx) => {
-        return res.once(
-          ctx.status(422),
-          ctx.json({ summary: "task already exists" })
-        );
-      })
-    );
-
-    changeSummaryInput(task.summary);
+    changeSummaryInput("__test_error_input__");
     changeDescriptionInput(task.description);
     changeStatusInput(task.status);
     act(() => {
       clickSubmit();
     });
-
-    expect(await screen.findByText(/task already exists/)).toBeInTheDocument();
-    await waitFor(() => {
-      expect(onHide).not.toHaveBeenCalledWith();
-    });
+    expect(
+      await screen.findByText(/__test_error_description__/)
+    ).toBeInTheDocument();
   });
 });

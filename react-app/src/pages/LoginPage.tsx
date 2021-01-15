@@ -7,15 +7,12 @@ import LoginForm, {
   validationSchema,
 } from "../forms/LoginForm";
 import { withAuth, WithAuthProps } from "../contexts/auth";
-import { LocationType } from "../types";
-
-type stateType = {
-  from: { pathname: string };
-};
 
 const LoginPage: FC = () => {
   const history = useHistory();
-  const location = useLocation<stateType>();
+  const location = useLocation<{
+    from: { pathname: string };
+  }>();
   const { from } = location.state || { from: { pathname: "/projects" } };
   const [values, setValues] = useState<LoginFormValues>({
     email: "",

@@ -1,9 +1,9 @@
 import { Ability, AbilityClass, AbilityBuilder } from "@casl/ability";
 
-import { User, Role } from "../../types/models";
+import { User, Role } from "../../types";
 
-const actions = ["create", "read", "update", "delete"] as const;
-type Actions = typeof actions[number];
+const manage = ["create", "read", "update", "delete"];
+type Actions = typeof manage[number];
 export type Subjects =
   | "AdminProject"
   | "AdminTask"
@@ -15,11 +15,11 @@ export type Subjects =
 export type AppAbility = Ability<[Actions, Subjects]>;
 export const AppAbilityClass = Ability as AbilityClass<AppAbility>;
 
-export const defineAbilityFor = (user: User): AppAbility => {
+export const defineAbilityFor = (user?: User): AppAbility => {
   const { can, rules } = new AbilityBuilder<AppAbility>();
-  const manage = Object.keys(actions) as Actions[];
+  const role = Role[user?.role as keyof typeof Role];
 
-  switch (user?.role) {
+  switch (role) {
     case Role.admin:
       can(manage, "AdminProject");
       can(manage, "AdminTask");
@@ -37,3 +37,5 @@ export const defineAbilityFor = (user: User): AppAbility => {
 
   return new AppAbilityClass(rules);
 };
+
+export default defineAbilityFor;

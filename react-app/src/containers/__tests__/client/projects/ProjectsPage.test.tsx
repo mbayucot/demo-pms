@@ -13,11 +13,13 @@ import { BrowserRouter } from "react-router-dom";
 
 import ProjectsPage from "../../../client/projects/ProjectsPage";
 
+import { handlers as projectHandlers } from "../../../__mocks__/client/project";
 import {
-  handlers as projectHandler,
   data as projectData,
-} from "../../../__mocks__/client/project";
-import { handlers as userHandler } from "../../../__mocks__/user";
+  searchData,
+  sortData,
+  paginationData,
+} from "../../../../fixtures/project";
 
 const setup = () => {
   const utils = render(
@@ -28,23 +30,21 @@ const setup = () => {
     </BrowserRouter>
   );
   const searchInput = utils.getByPlaceholderText(
-    /Search.../i
+    /search.../i
   ) as HTMLInputElement;
   const changeSearchInput = (value: string) =>
     userEvent.type(searchInput, value);
   const searchButton = utils.getByRole("button", {
-    name: /Search/i,
+    name: /search/i,
   });
   const clickSearchButton = () => userEvent.click(searchButton);
   const newProjectButton = utils.getByRole("button", {
-    name: /New/i,
+    name: /new project/i,
   });
   const clickNewButton = () => userEvent.click(newProjectButton);
   const gridTable = screen.getByRole("table");
-  const spinner = utils.getByRole(/status/i);
   return {
     gridTable,
-    spinner,
     changeSearchInput,
     clickNewButton,
     clickSearchButton,
@@ -52,25 +52,29 @@ const setup = () => {
 };
 
 describe("ProjectsPage", () => {
-  const server = setupServer(...projectHandler, ...userHandler);
+  const server = setupServer(...projectHandlers);
 
   beforeAll(() => server.listen());
+
+  beforeEach(() => {
+    cache.clear();
+  });
+
+  afterAll(() => server.close());
 
   afterEach(() => {
     server.resetHandlers();
   });
 
-  afterAll(() => server.close());
-
-  it("should render page and grid headers", async () => {
-    const { gridTable, spinner } = setup();
+  it("should render projects container", async () => {
+    const { gridTable } = setup();
     expect(
       screen.getByRole("heading", { name: /projects/i })
     ).toBeInTheDocument();
-    expect(spinner).toHaveTextContent(/loading/i);
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
 
     const gridUtils = within(gridTable);
-    const columns = ["name"];
+    const columns = ["Name"];
     columns.forEach((column) => {
       expect(
         gridUtils.getByRole("columnheader", {
@@ -79,32 +83,6 @@ describe("ProjectsPage", () => {
       ).toBeInTheDocument();
     });
 
-    await waitForElementToBeRemoved(() => spinner);
-
-    projectData.entries.forEach((project) => {
-      expect(
-        gridUtils.getByRole("cell", {
-          name: project.name,
-        })
-      ).toBeInTheDocument();
-    });
-  });
-
-  it("should sort", async () => {
-    const {
-      gridTable,
-      spinner,
-      changeSearchInput,
-      clickSearchButton,
-    } = setup();
-    await waitForElementToBeRemoved(() => spinner);
-
-    await changeSearchInput("__query__");
-    act(() => {
-      clickSearchButton();
-    });
-    await waitForElementToBeRemoved(() => spinner);
-    const gridUtils = within(gridTable);
     expect(
       gridUtils.getByRole("cell", {
         name: projectData.entries[0].name,
@@ -112,60 +90,69 @@ describe("ProjectsPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("should search", async () => {
-    const {
-      gridTable,
-      spinner,
-      changeSearchInput,
-      clickSearchButton,
-    } = setup();
-    await waitForElementToBeRemoved(() => spinner);
+  it("should filter data when search button is clicked", async () => {
+    const { gridTable, changeSearchInput, clickSearchButton } = setup();
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
 
     await changeSearchInput("__query__");
     act(() => {
       clickSearchButton();
     });
-    await waitForElementToBeRemoved(() => spinner);
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
     const gridUtils = within(gridTable);
     expect(
       gridUtils.getByRole("cell", {
-        name: projectData.entries[0].name,
+        name: searchData.entries[0].name,
       })
     ).toBeInTheDocument();
   });
 
-  it("should paginate", async () => {
-    const { gridTable, spinner } = setup();
-    await waitForElementToBeRemoved(() => spinner);
+  it("should sort data when grid table header is clicked", async () => {
+    const { gridTable } = setup();
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
+
+    const gridUtils = within(gridTable);
+    const header = gridUtils.getByRole("columnheader", {
+      name: "Name",
+    });
+    act(() => {
+      userEvent.click(header);
+    });
+    expect(screen.getByText("🔼")).toBeInTheDocument();
+    expect(
+      gridUtils.getByRole("cell", {
+        name: sortData.entries[0].name,
+      })
+    ).toBeInTheDocument();
+  });
+
+  it("should paginate when next button is clicked", async () => {
+    const { gridTable } = setup();
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
 
     const gridUtils = within(gridTable);
     act(() => {
       userEvent.click(screen.getByText(/next/i));
     });
-    await waitForElementToBeRemoved(() => spinner);
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
     expect(
       gridUtils.getByRole("cell", {
-        name: projectData.entries[0].name,
+        name: paginationData.entries[0].name,
       })
     ).toBeInTheDocument();
   });
 
-  it("should open new task modal", async () => {
-    const { spinner, clickNewButton } = setup();
-    await waitForElementToBeRemoved(() => spinner);
+  it("should show new project modal when new project button is clicked", async () => {
+    const { clickNewButton } = setup();
 
     clickNewButton();
-    expect(
-      screen.getByRole("heading", {
-        name: /new project/i,
-      })
-    ).toBeInTheDocument();
-    userEvent.click(screen.getByText(/×/i));
+    const dialogUtils = within(screen.getByRole("dialog"));
+    expect(dialogUtils.getByText(/new project/i)).toBeInTheDocument();
   });
 
-  it("should open edit task modal", async () => {
-    const { gridTable, spinner, clickNewButton } = setup();
-    await waitForElementToBeRemoved(() => spinner);
+  it("should show edit project modal when edit button is clicked", async () => {
+    const { gridTable } = setup();
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
 
     const gridUtils = within(gridTable);
     const row = gridUtils
@@ -178,13 +165,13 @@ describe("ProjectsPage", () => {
       name: /edit/i,
     });
     userEvent.click(editButton);
-    expect(screen.getByText(/edit project/i)).toBeInTheDocument();
-    userEvent.click(screen.getByText(/×/i));
+    const dialogUtils = within(screen.getByRole("dialog"));
+    expect(dialogUtils.getByText(/edit project/i)).toBeInTheDocument();
   });
 
-  it("should open delete task modal", async () => {
-    const { gridTable, spinner } = setup();
-    await waitForElementToBeRemoved(() => spinner);
+  it("should show confirmation modal when delete button is clicked", async () => {
+    const { gridTable } = setup();
+    await waitForElementToBeRemoved(() => screen.getByRole(/status/i));
 
     const gridUtils = within(gridTable);
     const row = gridUtils
@@ -193,19 +180,17 @@ describe("ProjectsPage", () => {
       })
       .closest("tr") as HTMLElement;
     const rowUtils = within(row);
-
     const deleteButton = rowUtils.getByRole("button", {
       name: /delete/i,
     });
-    const okButton = rowUtils.getByRole("button", {
+    userEvent.click(deleteButton);
+    const dialogUtils = within(screen.getByRole("dialog"));
+    expect(dialogUtils.getByText(/confirmation/i)).toBeInTheDocument();
+
+    const okButton = dialogUtils.getByRole("button", {
       name: /ok/i,
     });
-    userEvent.click(deleteButton);
-    expect(
-      screen.getByText(/Are you sure you want to delete this project?/i)
-    ).toBeInTheDocument();
     userEvent.click(okButton);
-
-    await waitForElementToBeRemoved(() => spinner);
+    await waitForElementToBeRemoved(() => screen.getByRole(/dialog/i));
   });
 });

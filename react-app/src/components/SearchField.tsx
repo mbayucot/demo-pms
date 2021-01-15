@@ -1,6 +1,6 @@
 import React, { FC, useState, ChangeEvent, KeyboardEvent } from "react";
-import InputGroup from "react-bootstrap/InputGroup";
 import Button from "react-bootstrap/Button";
+import InputGroup from "react-bootstrap/InputGroup";
 import SearchIcon from "@atlaskit/icon/glyph/search";
 
 interface SearchFieldProps {

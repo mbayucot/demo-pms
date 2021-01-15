@@ -1,7 +1,7 @@
 import React, { FC } from "react";
-import Modal from "react-bootstrap/Modal";
 import { withFormik } from "formik";
 import useSWR from "swr";
+import Modal from "react-bootstrap/Modal";
 import Spinner from "react-bootstrap/Spinner";
 
 import TaskForm, {
@@ -9,7 +9,8 @@ import TaskForm, {
   validationSchema,
 } from "../../../forms/TaskForm";
 import axios from "../../../lib/axios";
-import { FormWithModalProps, User } from "../../../types";
+import { FormWithModalProps } from "../../../lib/modal-manager";
+import { User } from "../../../types";
 
 interface TaskFormProps {
   assignee?: User;
@@ -28,9 +29,7 @@ const EditTaskModal: FC<FormWithModalProps> = ({ id, onHide }) => {
         summary: props.summary || "",
         description: props.description || "",
         status: props.status || "",
-        assigned_to: props.assignee
-          ? ((props.assignee.id as unknown) as number)
-          : "",
+        assigned_to: props.assignee ? props.assignee.id : "",
       };
     },
 

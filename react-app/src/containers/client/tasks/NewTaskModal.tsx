@@ -1,23 +1,31 @@
 import React, { FC } from "react";
-import Modal from "react-bootstrap/Modal";
 import { withFormik } from "formik";
+import Modal from "react-bootstrap/Modal";
 
 import TaskForm, {
   TaskFormValues,
   validationSchema,
 } from "../../../forms/TaskForm";
 import axios from "../../../lib/axios";
-import { FormWithModalProps } from "../../../types";
+import { FormWithModalProps } from "../../../lib/modal-manager";
 
 interface NewTaskModalProps extends FormWithModalProps {
   projectId: string | number | undefined;
 }
 
+type OtherProps = {
+  isNew?: boolean;
+};
+
 const NewTaskModal: FC<NewTaskModalProps> = ({ projectId, onHide }) => {
-  const EnhancedProjectForm = withFormik<
-    Record<string, unknown>,
-    TaskFormValues
-  >({
+  const EnhancedTaskForm = withFormik<OtherProps, TaskFormValues>({
+    mapPropsToValues: (props) => ({
+      summary: "",
+      description: "",
+      status: "",
+      assigned_to: "",
+    }),
+
     validationSchema: validationSchema,
 
     handleSubmit: async (values: TaskFormValues, { props, ...actions }) => {
@@ -31,13 +39,13 @@ const NewTaskModal: FC<NewTaskModalProps> = ({ projectId, onHide }) => {
   })(TaskForm);
 
   return (
-    <Modal show={true} animation={false} onHide={onHide} centered>
+    <Modal show={true} animation={false} onHide={onHide} centered size="lg">
       <Modal.Header closeButton>
         <div className="modal-title">
           <h6>New Task</h6>
         </div>
       </Modal.Header>
-      <EnhancedProjectForm />
+      <EnhancedTaskForm isNew />
     </Modal>
   );
 };

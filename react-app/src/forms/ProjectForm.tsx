@@ -1,14 +1,14 @@
-import { FormikProps } from "formik";
 import React from "react";
+import { FormikProps } from "formik";
+import * as Yup from "yup";
+import AsyncSelect from "react-select/async";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import Modal from "react-bootstrap/Modal";
 import Spinner from "react-bootstrap/Spinner";
-import * as Yup from "yup";
-import AsyncSelect from "react-select/async";
 
 import { searchUsersByRole } from "../api/user";
-import { Project, User } from "../types/models";
+import { Project, User } from "../types";
 
 export type ProjectFormValues = Pick<Project, "name" | "created_by">;
 
@@ -16,7 +16,7 @@ export const validationSchema = Yup.object().shape({
   name: Yup.string()
     .required("Name is required")
     .min(3, "Name is too short")
-    .max(20, "Name is too long"),
+    .max(32, "Name is too long"),
 });
 
 interface OtherProps {
@@ -37,6 +37,7 @@ const ProjectForm = (
     isAdmin,
     client,
   } = props;
+
   return (
     <Form noValidate onSubmit={handleSubmit}>
       <Modal.Body>
@@ -66,10 +67,7 @@ const ProjectForm = (
               defaultOptions
               className={errors.created_by ? "is-invalid" : ""}
               loadOptions={(inputValue: string) =>
-                searchUsersByRole({
-                  query: inputValue,
-                  role: "client",
-                })
+                searchUsersByRole(inputValue, "client")
               }
               defaultValue={
                 client ? { value: client.id, label: client.full_name } : {}
