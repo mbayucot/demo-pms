@@ -1,0 +1,9 @@
+version: 1
+task_definition:
+  services:
+    web:
+      cpu_shares: 768
+      mem_limit: "1500m"
+    nginx:
+      cpu_shares: 256
+      mem_limit: "300m"

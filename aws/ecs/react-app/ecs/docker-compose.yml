@@ -1,0 +1,13 @@
+version: "3"
+
+services:
+  web:
+    image: xxx.dkr.ecr.us-east-2.amazonaws.com/demo-app/web:latest
+    ports:
+      - 80:80
+    logging:
+      driver: awslogs
+      options: 
+        awslogs-group: demo-app-web
+        awslogs-region: us-east-2
+        awslogs-stream-prefix: demo-app-web
