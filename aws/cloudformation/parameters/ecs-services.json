@@ -1,0 +1,58 @@
+[
+  {
+    "ParameterKey": "SGDescription",
+    "ParameterValue": "Security group for mike on us-east-1"
+  },
+  {
+    "ParameterKey": "SGName",
+    "ParameterValue": "mike_SG_useast1"
+  },
+  {
+    "ParameterKey": "DBInstanceClass",
+    "ParameterValue": "db.t2.micro"
+  },
+  {
+    "ParameterKey": "DBAllocatedStorage",
+    "ParameterValue": "20"
+  },
+  {
+    "ParameterKey": "DBInstanceID",
+    "ParameterValue": "demoproduction"
+  },
+  {
+    "ParameterKey": "DBName",
+    "ParameterValue": "demo"
+  },
+  {
+    "ParameterKey": "DBUsername",
+    "ParameterValue": "root"
+  },
+  {
+    "ParameterKey": "DBPassword",
+    "ParameterValue": "Jn5dX4dQ"
+  },
+  {
+    "ParameterKey": "RedisCacheNodeType",
+    "ParameterValue": "cache.t2.micro"
+  },
+  {
+    "ParameterKey": "RedisNumCacheNodes",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "RedisClusterName",
+    "ParameterValue": "demo-production"
+  },
+  {
+    "ParameterKey": "APIWebECRName",
+    "ParameterValue": "demo-api/web"
+  },
+  {
+    "ParameterKey": "APINginxECRName",
+    "ParameterValue": "demo-api/nginx"
+  },
+  {
+    "ParameterKey": "AppECRName",
+    "ParameterValue": "demo-app/web"
+  }
+]

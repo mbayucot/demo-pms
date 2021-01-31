@@ -1,0 +1,188 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Provision services required by ECS Cluster
+Parameters:
+  SGDescription:
+    Description: A description for the security group.
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9\-\/\s]*'
+    ConstraintDescription: must contain only alphanumeric characters.
+  SGName:
+    Description: The name of the security group.
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9_]*'
+    ConstraintDescription: must contain only alphanumeric characters.
+  DBInstanceID:
+    Default: PostgresDBinstance
+    Description: Database instance
+    Type: String
+    MinLength: '1'
+    MaxLength: '63'
+  DBName:
+    Default: PostgresDB
+    Description: Postgres database
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: Must begin with a letter and contain only alphanumeric characters.
+  DBInstanceClass:
+    AllowedValues:
+      - db.t2.micro
+      - db.t2.small
+      - db.t2.medium
+      - db.t2.large
+    Default: db.t2.micro
+    Description: DB instance class
+    Type: String
+    ConstraintDescription: Must select a valid DB instance type.
+  DBAllocatedStorage:
+    Default: '20'
+    Description: The size of the database (GiB)
+    Type: Number
+    MinValue: '5'
+    MaxValue: '1024'
+    ConstraintDescription: must be between 20 and 65536 GiB.
+  DBUsername:
+    NoEcho: 'true'
+    Description: Username for PostgreSQL database access
+    Type: String
+    MinLength: '1'
+    MaxLength: '16'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+  DBPassword:
+    NoEcho: 'true'
+    Description: Password PostgreSQL database access
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: must contain only alphanumeric characters.
+  RedisCacheNodeType:
+    AllowedValues:
+      - cache.t2.micro
+      - cache.t2.small
+      - cache.t2.medium
+    Default: cache.t2.micro
+    Description: The compute and memory capacity of the nodes in the node group (shard).
+    Type: String
+  RedisNumCacheNodes:
+    Default: '1'
+    Description: The number of cache nodes that the cache cluster should have.
+    Type: Number
+    MinValue: '1'
+    MaxValue: '5'
+    ConstraintDescription: must be between 1 and 5
+  RedisClusterName:
+    Description: A name for the cache cluster.
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9\-\/]*'
+    ConstraintDescription: must contain only alphanumeric characters.
+  APIWebECRName:
+    Description: The name to use for the repository.
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9\-\/]*'
+    ConstraintDescription: must contain only alphanumeric characters.
+  APINginxECRName:
+    Description: The name to use for the repository.
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9\-\/]*'
+    ConstraintDescription: must contain only alphanumeric characters.
+  AppECRName:
+    Description: The name to use for the repository.
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9\-\/]*'
+    ConstraintDescription: must contain only alphanumeric characters.
+Resources:
+  ECSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Ref SGDescription
+      GroupName: !Ref SGName
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          CidrIp: 0.0.0.0/0
+  PostgresDB:
+    Type: 'AWS::RDS::DBInstance'
+    Properties:
+      DBInstanceIdentifier: !Ref DBInstanceID
+      DBName: !Ref DBName
+      DBInstanceClass: !Ref DBInstanceClass
+      AllocatedStorage: !Ref DBAllocatedStorage
+      Engine: postgres
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      MultiAZ: false
+      PubliclyAccessible: false
+      VPCSecurityGroups:
+        - !GetAtt
+          - ECSSecurityGroup
+          - GroupId
+  RedisElastiCache:
+    Type: 'AWS::ElastiCache::CacheCluster'
+    Properties:
+      Engine: redis
+      CacheNodeType: !Ref RedisCacheNodeType
+      NumCacheNodes: !Ref RedisNumCacheNodes
+      ClusterName: !Ref RedisClusterName
+      VpcSecurityGroupIds:
+        - !GetAtt
+          - ECSSecurityGroup
+          - GroupId
+  ApiWebECR:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref APIWebECRName
+  ApiNginxECR:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref APINginxECRName
+  AppECR:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref AppECRName
+Outputs:
+  SecurityGroupId:
+    Description: Security group ID
+    Value: !GetAtt ECSSecurityGroup.GroupId
+  DBEndpointAddress:
+    Description: DB Endpoint Address
+    Value: !GetAtt PostgresDB.Endpoint.Address
+  RedisEndpointAddress:
+    Description: Redis Endpoint Address
+    Value: !GetAtt RedisElastiCache.RedisEndpoint.Address
+  ApiWebECRArn:
+    Description: ECR Arn
+    Value: !GetAtt ApiWebECR.Arn
+  ApiNginxECRArn:
+    Description: ECR Arn
+    Value: !GetAtt ApiNginxECR.Arn
+  AppECRArn:
+    Description: ECR Arn
+    Value: !GetAtt AppECR.Arn

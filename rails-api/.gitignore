@@ -70,3 +70,4 @@ yarn-debug.log*
 
 # Editor settings
 .idea/
+/k8s-manifests/secret.yaml

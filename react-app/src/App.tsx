@@ -10,12 +10,9 @@ import { AuthProvider } from "./contexts/auth";
 import ErrorFallbackPage from "./pages/ErrorFallbackPage";
 import * as Sentry from "@sentry/react";
 
-/**
- *
- Sentry.init({
+Sentry.init({
   dsn: process.env.REACT_APP_SENTRY_DSN,
 });
- */
 
 const App = (): React.ReactElement => {
   return (
