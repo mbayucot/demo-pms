@@ -50,6 +50,16 @@ group :development, :test do
   gem 'rspec-rails'
   gem 'rubocop', '~> 0.93.1', require: false
   gem 'faker'
+
+  # Debugging
+  gem 'debase'
+  gem 'ruby-debug-ide'
+
+  # Profiler
+  gem 'rack-mini-profiler'
+  gem 'flamegraph'
+  gem 'stackprof'
+  gem 'memory_profiler'
 end
 
 group :development do

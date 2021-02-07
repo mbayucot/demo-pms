@@ -12,6 +12,6 @@ class UserSerializer < ActiveModel::Serializer
   end
 
   def role_fmt
-    object.status.capitalize
+    object.role.capitalize
   end
 end
